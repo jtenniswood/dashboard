@@ -281,6 +281,11 @@ onUnmounted(() => clearInterval(timer))
 		font: inherit;
 		cursor: pointer;
 	}
+	.widget-title {
+		font-size: 1.375rem;
+		line-height: 1.3;
+	}
+
 	.storage-widget > .blur-background {
 		background-color: rgb(0 63 94 / 50%);
 		border-color: rgb(191 236 255 / 12%);
