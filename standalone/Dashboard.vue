@@ -48,25 +48,36 @@
 			</aside>
 
 			<section class="main-column" aria-label="Apps">
-				<div class="app-grid">
-					<article v-for="card in state.links" :key="card.id" class="app-card common-card">
-						<div class="blur-background"></div>
-						<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer">
-							<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" @error="fallbackIcon">
-							<span v-else class="tile-icon" aria-hidden="true">
-								<b-icon icon="web" size="is-medium" />
-							</span>
-							<span class="one-line">{{ card.name }}</span>
-						</a>
-						<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" @click="openCard(card)">
-							<b-icon icon="dots-horizontal" />
+				<Draggable class="app-grid" :class="{ 'can-reorder': state.links.length > 1 }"
+					:model-value="pendingOrder ?? state.links" item-key="id" draggable=".web-card"
+					:disabled="saving || cardOpen || state.links.length < 2" :animation="150"
+					:force-fallback="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
+					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
+					ghost-class="card-drop-position" fallback-class="card-drag-preview"
+					@update:model-value="reorderCards">
+					<template #item="{ element: card }">
+						<article class="app-card common-card web-card">
+							<div class="blur-background"></div>
+							<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
+								<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" draggable="false" @error="fallbackIcon">
+								<span v-else class="tile-icon" aria-hidden="true">
+									<b-icon icon="web" size="is-medium" />
+								</span>
+								<span class="one-line">{{ card.name }}</span>
+							</a>
+							<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" :disabled="saving" @click="openCard(card)">
+								<b-icon icon="dots-horizontal" />
+							</button>
+						</article>
+					</template>
+					<template #footer>
+						<button type="button" class="app-card common-card add-card" :disabled="saving" @click="openCard()">
+							<div class="blur-background"></div>
+							<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add web card</span></span>
 						</button>
-					</article>
-					<button type="button" class="app-card common-card add-card" @click="openCard()">
-						<div class="blur-background"></div>
-						<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add web card</span></span>
-					</button>
-				</div>
+					</template>
+				</Draggable>
+				<p v-if="error && !cardOpen" class="has-text-white mt-3" role="alert">{{ error }}</p>
 			</section>
 		</main>
 		<p v-else class="container has-text-white" role="status">
@@ -86,6 +97,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { nanoid } from 'nanoid'
+import Draggable from 'vuedraggable'
 import CardEditor from './CardEditor.vue'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import defaultIcon from '@/assets/img/app/default.svg'
@@ -100,6 +112,7 @@ const error = ref('')
 const saving = ref(false)
 const cardOpen = ref(false)
 const editingCard = ref(null)
+const pendingOrder = ref(null)
 const hostDrives = ref([])
 const webIndex = computed(() => state.value?.links.findIndex(link => link.id === editingCard.value?.id) ?? -1)
 const drives = computed(() => {
@@ -209,6 +222,16 @@ async function deleteCard() {
 	if (await save({ links })) cardOpen.value = false
 }
 
+async function reorderCards(links) {
+	if (saving.value) return
+	pendingOrder.value = links
+	try {
+		await save({ links })
+	} finally {
+		pendingOrder.value = null
+	}
+}
+
 async function moveWeb(offset) {
 	const links = [...state.value.links]
 	const index = webIndex.value
@@ -276,6 +299,7 @@ onUnmounted(() => clearInterval(timer))
 
 	.blur-background { inset: 0; pointer-events: none; }
 	.add-card {
+		order: 1;
 		border: 0;
 		background: transparent;
 		font: inherit;
@@ -365,6 +389,16 @@ onUnmounted(() => clearInterval(timer))
 		span { max-width: 100%; }
 		&:focus-visible { outline: 2px solid white; border-radius: inherit; }
 	}
+
+	.can-reorder .web-card .app-link { cursor: grab; }
+
+	.web-card.card-drop-position {
+		outline: 2px dashed #b9e9ff;
+		outline-offset: -3px;
+		background: rgb(4 67 106 / 55%);
+	}
+	.card-drop-position > * { visibility: hidden; }
+	.card-drag-preview { opacity: 0.9; }
 
 	.tile-icon {
 		display: grid;
