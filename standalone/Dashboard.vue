@@ -54,9 +54,10 @@
 					:force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
 					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
 					ghost-class="card-drop-position" fallback-class="card-drag-preview"
-					@start="prepareDragPreview" @update:model-value="reorderCards">
+					@start="prepareDragPreview" @end="dragging = false" @update:model-value="reorderCards">
 					<template #item="{ element: card }">
-						<article class="app-card common-card web-card">
+						<article class="app-card common-card web-card" @contextmenu.prevent="openContextMenu($event, card)"
+							@keydown="openContextMenuFromKey($event, card)">
 							<div class="blur-background"></div>
 							<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
 								<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" draggable="false" @error="fallbackIcon">
@@ -71,7 +72,8 @@
 						</article>
 					</template>
 					<template #footer>
-						<button type="button" class="app-card common-card add-card" :disabled="saving" @click="openCard()">
+						<button type="button" class="app-card common-card add-card" :disabled="saving" @click="openCard()"
+							@contextmenu.prevent="openContextMenu($event)" @keydown="openContextMenuFromKey($event)">
 							<div class="blur-background"></div>
 							<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add card</span></span>
 						</button>
@@ -85,11 +87,13 @@
 			<button v-if="error" type="button" class="button is-small ml-2" @click="load">Retry</button>
 		</p>
 
+		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" />
+
 		<b-modal v-model="cardOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
 			<CardEditor v-if="editingCard" :key="editingCard.id" :card="editingCard"
 				:can-remove="webIndex >= 0" :can-move-earlier="webIndex > 0"
 				:can-move-later="webIndex < state.links.length - 1" :error="error" :saving="saving"
-				@save="saveCard" @cancel="cardOpen = false" @remove="deleteCard" @move="moveWeb" />
+				@save="saveCard" @cancel="cardOpen = false" @remove="deleteCard" @move="moveCard(editingCard.id, $event)" />
 		</b-modal>
 	</div>
 </template>
@@ -98,6 +102,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { nanoid } from 'nanoid'
 import Draggable from 'vuedraggable'
+import CardContextMenu from './CardContextMenu.vue'
 import CardEditor from './CardEditor.vue'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import defaultIcon from '@/assets/img/app/default.svg'
@@ -113,6 +118,8 @@ const saving = ref(false)
 const cardOpen = ref(false)
 const editingCard = ref(null)
 const pendingOrder = ref(null)
+const contextMenu = ref(null)
+let dragging = false
 const hostDrives = ref([])
 const webIndex = computed(() => state.value?.links.findIndex(link => link.id === editingCard.value?.id) ?? -1)
 const cpuCountLabel = computed(() => {
@@ -228,6 +235,8 @@ async function deleteCard() {
 }
 
 function prepareDragPreview() {
+	dragging = true
+	contextMenu.value.close()
 	const preview = document.body.querySelector(':scope > .card-drag-preview')
 	if (!preview) return
 	preview.inert = true
@@ -246,9 +255,21 @@ async function reorderCards(links) {
 	}
 }
 
-async function moveWeb(offset) {
+function openContextMenu(event, card) {
+	if (dragging || saving.value || cardOpen.value || event.pointerType === 'touch') return
+	const links = state.value.links
+	contextMenu.value.open(event, card, links.findIndex(link => link.id === card?.id), links.length)
+}
+
+function openContextMenuFromKey(event, card) {
+	if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return
+	event.preventDefault()
+	openContextMenu(event, card)
+}
+
+async function moveCard(id, offset) {
 	const links = [...state.value.links]
-	const index = webIndex.value
+	const index = links.findIndex(link => link.id === id)
 	const to = index + offset
 	if (index < 0 || to < 0 || to >= links.length) return
 	const [link] = links.splice(index, 1)
