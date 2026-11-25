@@ -15,9 +15,12 @@
 									<img :src="storageIcon" alt="" width="64" height="64">
 									<div>
 										<p class="drive-name">{{ drive.name }}</p>
-										<span v-if="drive.total" class="drive-capacity">
-											<span class="is-sr-only">Total capacity </span>{{ driveSize(drive.total) }}
-										</span>
+										<div v-if="drive.total" class="drive-badges">
+											<span class="drive-badge">
+												<span class="is-sr-only">Total capacity </span>{{ driveSize(drive.total) }}
+											</span>
+											<span class="drive-badge">{{ Math.round(driveUsage(drive)) }}% used</span>
+										</div>
 										<p v-else>Capacity unavailable</p>
 									</div>
 								</div>
@@ -295,9 +298,13 @@ onUnmounted(() => clearInterval(timer))
 	}
 	.drive-name { color: #f4fbff; font-weight: 600; }
 	.drive-details img { flex: 0 0 58px; }
-	.drive-capacity {
-		display: inline-block;
+	.drive-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
 		margin: 0.15rem 0 0.25rem;
+	}
+	.drive-badge {
 		padding: 0 0.35rem;
 		border: 1px solid currentColor;
 		border-radius: 0.3rem;
