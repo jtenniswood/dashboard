@@ -91,13 +91,13 @@
 
 		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" @wallpaper="showWallpaperPicker" />
 
-		<b-modal v-model="cardOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
+		<b-modal v-model="cardOpen" :destroy-on-hide="false" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
 			<CardEditor v-if="editingCard" :key="editingCard.id" :card="editingCard"
 				:can-remove="webIndex >= 0" :can-move-earlier="webIndex > 0"
 				:can-move-later="webIndex < state.links.length - 1" :error="error" :saving="saving"
 				@save="saveCard" @cancel="cardOpen = false" @remove="deleteCard" @move="moveCard(editingCard.id, $event)" />
 		</b-modal>
-		<b-modal v-model="wallpaperOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Change wallpaper">
+		<b-modal v-model="wallpaperOpen" :destroy-on-hide="false" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Change wallpaper">
 			<div class="modal-card wallpaper-picker">
 				<header class="modal-card-head"><h2 class="modal-card-title">Change wallpaper</h2></header>
 				<section class="modal-card-body">
