@@ -54,7 +54,7 @@
 					:force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
 					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
 					ghost-class="card-drop-position" fallback-class="card-drag-preview"
-					@update:model-value="reorderCards">
+					@start="prepareDragPreview" @update:model-value="reorderCards">
 					<template #item="{ element: card }">
 						<article class="app-card common-card web-card">
 							<div class="blur-background"></div>
@@ -225,6 +225,15 @@ async function saveCard(card) {
 async function deleteCard() {
 	const links = state.value.links.filter(link => link.id !== editingCard.value.id)
 	if (await save({ links })) cardOpen.value = false
+}
+
+function prepareDragPreview() {
+	const preview = document.body.querySelector(':scope > .card-drag-preview')
+	if (!preview) return
+	preview.inert = true
+	const [x, y] = preview.style.transformOrigin.split(' ')
+	preview.style.setProperty('--grab-x', x)
+	preview.style.setProperty('--grab-y', y)
 }
 
 async function reorderCards(links) {
@@ -436,7 +445,43 @@ onUnmounted(() => clearInterval(timer))
 	.upload-line { stroke: #7ff2be; }
 }
 
-.card-drag-preview { visibility: hidden; }
+.app-card.card-drag-preview {
+	opacity: 1 !important;
+	transition: none;
+
+	> .blur-background, > .card-action { display: none; }
+
+	.app-link {
+		position: absolute;
+		top: var(--grab-y, 50%);
+		left: var(--grab-x, 50%);
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: max-content;
+		max-width: 10rem;
+		height: 2.25rem;
+		padding-inline: 0.5rem;
+		transform: translate(-50%, calc(-100% - 0.65rem));
+		border: 1px solid #b9e9ff;
+		border-radius: 0.45rem;
+		background: #102e43;
+		box-shadow: 0 2px 8px #0006;
+		color: white;
+		font-size: 0.8125rem;
+	}
+
+	img, .tile-icon {
+		display: grid;
+		flex: 0 0 1.25rem;
+		place-items: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		object-fit: contain;
+	}
+	.tile-icon .mdi::before { font-size: 1.125rem; }
+	.one-line { min-width: 0; }
+}
 
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .right-actions { margin-left: auto; display: flex; gap: 0.5rem; }
