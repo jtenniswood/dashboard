@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Modified for Dashboard to use its own title and manifest. -->
+<!-- Modified for Dashboard to use its own title and manifest and always render in light mode. -->
 <!-- data-theme is the theme switch: Bulma 1 only follows the OS on its own
      through an unguarded @media (prefers-color-scheme: dark) block, so the
      attribute always carries a concrete value. "light" here is the no-JS
@@ -18,6 +18,9 @@
 	<meta content="#ffffff" name="theme-color">
 	<link href="<%= BASE_URL %>favicon.ico" rel="shortcut icon" type="image/x-icon">
 	<link href="<%= BASE_URL %>favicon.svg" rel="icon" type="image/svg+xml">
+	<% if (htmlWebpackPlugin.options.title === 'Dashboard') { %>
+	<meta content="light" name="color-scheme">
+	<% } else { %>
 	<!-- Same three rules as src/mixins/app/themePreference.js, inlined so the
 	     theme is settled before the stylesheet arrives: a stored light/dark wins,
 	     anything else follows the OS. theme-color follows the attribute:
@@ -32,6 +35,7 @@
 			document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1f2023' : '#ffffff'
 		} catch (e) {}
 	</script>
+	<% } %>
 	<!-- Ground before the extracted CSS lands: #fff is what Bulma paints on
 	     <html> in light, #000 is what the dashboard paints under the wallpaper.
 	     html[data-theme] outranks Bulma's bare html rule. -->

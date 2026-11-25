@@ -137,13 +137,6 @@
 			<form v-if="settings" class="modal-card" @submit.prevent="saveSettings">
 				<header class="modal-card-head"><h2 class="modal-card-title">Dashboard settings</h2></header>
 				<section class="modal-card-body">
-					<b-field label="Appearance" label-for="theme">
-						<div class="select"><select id="theme" v-model="settings.theme">
-							<option value="system">Match this device</option>
-							<option value="light">Light</option>
-							<option value="dark">Dark</option>
-						</select></div>
-					</b-field>
 					<b-field label="Wallpaper" label-for="wallpaper">
 						<div class="select"><select id="wallpaper" v-model="settings.wallpaper">
 							<option value="wallpaper01">Wallpaper 1</option>
@@ -173,7 +166,6 @@ import CardEditor from './CardEditor.vue'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import defaultIcon from '@/assets/img/app/default.svg'
 import storageIcon from '@/assets/img/storage/storage.svg'
-import { readThemePreference, setThemePreference } from '@/mixins/app/themePreference'
 
 const widgetNames = { system: 'System status', storage: 'Storage', network: 'Network status' }
 const state = ref(null)
@@ -325,18 +317,14 @@ function openSettings() {
 	settings.value = {
 		widgets: [...state.value.widgets],
 		wallpaper: state.value.wallpaper,
-		theme: readThemePreference(),
 	}
 	settingsOpen.value = true
 }
 
 async function saveSettings() {
-	const { theme, ...patch } = settings.value
-	patch.widgets = Object.keys(widgetNames).filter(widget => patch.widgets.includes(widget))
-	if (await save(patch)) {
-		setThemePreference(theme)
-		settingsOpen.value = false
-	}
+	const { wallpaper, widgets } = settings.value
+	const orderedWidgets = Object.keys(widgetNames).filter(widget => widgets.includes(widget))
+	if (await save({ wallpaper, widgets: orderedWidgets })) settingsOpen.value = false
 }
 
 onMounted(() => {
