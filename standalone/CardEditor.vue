@@ -29,7 +29,7 @@
 			<b-button v-if="canRemove" type="is-danger is-light" :disabled="saving" @click="remove">{{ confirmRemoval ? 'Confirm removal' : 'Remove' }}</b-button>
 			<div class="right-actions">
 				<b-button :disabled="saving" @click="$emit('cancel')">Cancel</b-button>
-				<b-button native-type="submit" type="is-primary" :loading="saving || processing" :disabled="!!uploadError">{{ canRemove ? 'Save' : 'Add web card' }}</b-button>
+				<b-button native-type="submit" type="is-primary" :loading="saving || processing" :disabled="!!uploadError">{{ canRemove ? 'Save' : 'Add card' }}</b-button>
 			</div>
 		</footer>
 	</form>
@@ -53,7 +53,7 @@ const iconURL = ref(upload.value ? '' : props.card.icon)
 const processing = ref(false)
 const uploadError = ref('')
 const confirmRemoval = ref(false)
-const title = computed(() => props.canRemove ? 'Edit web card' : 'Add web card')
+const title = computed(() => props.canRemove ? 'Edit card' : 'Add card')
 let selection = 0
 
 function clearUpload() {

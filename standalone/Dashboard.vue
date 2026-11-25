@@ -71,7 +71,7 @@
 					<template #footer>
 						<button type="button" class="app-card common-card add-card" :disabled="saving" @click="openCard()">
 							<div class="blur-background"></div>
-							<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add web card</span></span>
+							<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add card</span></span>
 						</button>
 					</template>
 				</Draggable>
