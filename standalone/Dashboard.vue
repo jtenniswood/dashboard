@@ -15,12 +15,9 @@
 									<img :src="storageIcon" alt="" width="64" height="64">
 									<div>
 										<p class="drive-name">{{ drive.name }}</p>
-										<template v-if="drive.total">
-											<span class="drive-usage">{{ Math.round(driveUsage(drive)) }}% used</span>
-											<p>Used: {{ driveSize(drive.used) }}</p>
-											<p>Available: {{ driveSize(drive.available) }}</p>
-											<p>Total: {{ driveSize(drive.total) }}</p>
-										</template>
+										<span v-if="drive.total" class="drive-capacity">
+											<span class="is-sr-only">Total capacity </span>{{ driveSize(drive.total) }}
+										</span>
 										<p v-else>Capacity unavailable</p>
 									</div>
 								</div>
@@ -104,8 +101,8 @@ const hostDrives = ref([])
 const webIndex = computed(() => state.value?.links.findIndex(link => link.id === editingCard.value?.id) ?? -1)
 const drives = computed(() => {
 	if (!metrics.value) return hostDrives.value
-	const { diskTotal: total, diskUsed: used, diskAvailable: available } = metrics.value
-	return [...hostDrives.value, { name: 'Docker data', total, used, available }]
+	const { diskTotal: total, diskUsed: used } = metrics.value
+	return [...hostDrives.value, { name: 'Docker data', total, used }]
 })
 const wallpaper = computed(() => state.value?.wallpaper || 'wallpaper01')
 let timer
@@ -146,14 +143,16 @@ function size(bytes) {
 	return `${(bytes / 1024 ** unit).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${units[unit]}`
 }
 
-const wholeNumber = new Intl.NumberFormat()
+const capacityNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 })
 
 function driveUsage(drive) {
 	return Math.max(0, Math.min(100, 100 * drive.used / drive.total))
 }
 
 function driveSize(bytes) {
-	return `${wholeNumber.format(Math.round(bytes / 1_000_000_000))} GB`
+	const gigabytes = bytes / 1_000_000_000
+	if (gigabytes >= 1000) return `${capacityNumber.format(gigabytes / 1000)} TB`
+	return `${capacityNumber.format(Math.round(gigabytes))} GB`
 }
 
 async function save(patch) {
@@ -296,7 +295,7 @@ onUnmounted(() => clearInterval(timer))
 	}
 	.drive-name { color: #f4fbff; font-weight: 600; }
 	.drive-details img { flex: 0 0 58px; }
-	.drive-usage {
+	.drive-capacity {
 		display: inline-block;
 		margin: 0.15rem 0 0.25rem;
 		padding: 0 0.35rem;
