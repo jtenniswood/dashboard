@@ -30,8 +30,8 @@
 						</template>
 						<p v-else-if="!metrics" class="mt-2">{{ metricsUnavailable ? 'Metrics unavailable' : 'Reading metrics…' }}</p>
 						<div v-else-if="widget === 'system'" class="columns is-mobile mt-1">
-							<div class="column is-half"><RadialBar :percent="metrics.cpuPercent" :extend-content="cpuCountLabel" label="CPU" /></div>
-							<div class="column is-half"><RadialBar :percent="metrics.ramPercent" :extend-content="size(metrics.ramTotal)" label="RAM" /></div>
+							<div class="column is-half"><RadialBar :percent="metrics.cpuPercent" :extend-content="cpuCountLabel" :circle-background-color="gaugeTrack" label="CPU" /></div>
+							<div class="column is-half"><RadialBar :percent="metrics.ramPercent" :extend-content="size(metrics.ramTotal)" :circle-background-color="gaugeTrack" label="RAM" /></div>
 						</div>
 						<template v-else-if="metrics.network">
 							<svg v-if="networkHistory.length > 1" class="network-chart" viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true">
@@ -131,6 +131,7 @@ import { wallpapers } from './wallpapers.mjs'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import storageIcon from '@/assets/img/storage/storage.svg'
 
+const gaugeTrack = 'rgb(145 158 170 / 32%)'
 const widgetNames = { system: 'System', storage: 'Storage', network: 'Network status' }
 const state = ref(null)
 const metrics = ref(null)
@@ -404,8 +405,8 @@ onUnmounted(() => clearInterval(timer))
 		> .widget-content { padding-bottom: 1.5rem; }
 
 		> .blur-background {
-			background-color: rgb(0 63 94 / 50%);
-			border-color: rgb(191 236 255 / 12%);
+			background-color: rgb(32 32 32 / 62%);
+			border-color: rgb(255 255 255 / 12%);
 		}
 	}
 
