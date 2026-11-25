@@ -304,7 +304,7 @@ onUnmounted(() => clearInterval(timer))
 		cursor: pointer;
 	}
 	.widget-title {
-		font-size: 1.375rem;
+		font-size: 1.25rem;
 		line-height: 1.3;
 	}
 
