@@ -50,6 +50,7 @@ export function sampleMetrics(dataDir) {
 			ramPercent: Math.round(100 * (1 - freemem() / ramTotal)),
 			diskTotal: disk.blocks * disk.bsize,
 			diskUsed: (disk.blocks - disk.bfree) * disk.bsize,
+			diskAvailable: disk.bavail * disk.bsize,
 			network: currentNetwork ? { down: rate('rx'), up: rate('tx') } : null,
 		}
 		network = currentNetwork

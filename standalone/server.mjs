@@ -7,13 +7,16 @@ import { sampleMetrics } from './metrics.mjs'
 const staticDir = fileURLToPath(new URL('../dist', import.meta.url)).replace(/\/$/, '')
 const dataDir = resolve(process.env.DATA_DIR || './data')
 const dataFile = resolve(dataDir, 'dashboard.json')
+const inventoryFile = '/snapshot/inventory.json'
+const widgetNames = ['system', 'storage', 'network']
+const emptyInventory = { containers: null, drives: null }
 const port = Number(process.env.PORT || 8080)
 const defaults = {
 	revision: 0,
 	links: [],
 	wallpaper: 'wallpaper01',
-	widgets: ['clock', 'system', 'storage', 'network'],
-	search: true,
+	widgets: ['system', 'storage'],
+	containers: [],
 }
 const mime = {
 	'.css': 'text/css; charset=utf-8',
@@ -31,7 +34,11 @@ const mime = {
 mkdirSync(dataDir, { recursive: true })
 let dashboard = defaults
 try {
-	dashboard = JSON.parse(readFileSync(dataFile, 'utf8'))
+	const saved = JSON.parse(readFileSync(dataFile, 'utf8'))
+	const wasDefault = !saved.containers && saved.widgets.join(',') === 'clock,system,storage,network'
+	const widgets = wasDefault ? defaults.widgets : saved.widgets.filter(widget => widgetNames.includes(widget))
+	dashboard = { ...defaults, ...saved, widgets }
+	delete dashboard.search
 } catch (error) {
 	if (error.code !== 'ENOENT') throw error
 }
@@ -52,20 +59,49 @@ function validURL(value) {
 	}
 }
 
-function validate(value) {
-	if (!Number.isSafeInteger(value?.revision) || !Array.isArray(value.links) || value.links.length > 200
-		|| !['wallpaper01', 'wallpaper02'].includes(value.wallpaper)
-		|| !Array.isArray(value.widgets) || new Set(value.widgets).size !== value.widgets.length
-		|| !value.widgets.every(widget => defaults.widgets.includes(widget))
-		|| typeof value.search !== 'boolean') return false
+function validIcon(value) {
+	if (value === '' || validURL(value)) return true
+	const prefix = 'data:image/png;base64,'
+	if (typeof value !== 'string' || !value.startsWith(prefix) || value.length > 100000) return false
+	const encoded = value.slice(prefix.length)
+	const png = Buffer.from(encoded, 'base64')
+	return png.length >= 33 && png.toString('base64') === encoded
+		&& png.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))
+		&& png.toString('ascii', 12, 16) === 'IHDR'
+		&& png.readUInt32BE(16) > 0 && png.readUInt32BE(16) <= 128
+		&& png.readUInt32BE(20) > 0 && png.readUInt32BE(20) <= 128
+}
+
+function validCards(cards, validId, urlRequired) {
+	if (!Array.isArray(cards) || cards.length > 200) return false
 	const ids = new Set()
-	for (const link of value.links) {
-		if (typeof link?.id !== 'string' || !/^[a-zA-Z0-9_-]{10,40}$/.test(link.id) || ids.has(link.id)
-			|| typeof link.name !== 'string' || !link.name.trim() || link.name.length > 80
-			|| !validURL(link.url) || (link.icon !== '' && !validURL(link.icon))) return false
-		ids.add(link.id)
+	for (const card of cards) {
+		if (typeof card?.id !== 'string' || !validId.test(card.id) || ids.has(card.id)
+			|| typeof card.name !== 'string' || !card.name.trim() || card.name.length > (urlRequired ? 80 : 255)
+			|| !(validURL(card.url) || (!urlRequired && card.url === ''))
+			|| !validIcon(card.icon)) return false
+		ids.add(card.id)
 	}
 	return true
+}
+
+function validate(value) {
+	return Number.isSafeInteger(value?.revision)
+		&& ['wallpaper01', 'wallpaper02'].includes(value.wallpaper)
+		&& Array.isArray(value.widgets) && new Set(value.widgets).size === value.widgets.length
+		&& value.widgets.every(widget => widgetNames.includes(widget))
+		&& validCards(value.links, /^[a-zA-Z0-9_-]{10,40}$/, true)
+		&& validCards(value.containers, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,254}$/, false)
+}
+
+function inventory() {
+	try {
+		const snapshot = JSON.parse(readFileSync(inventoryFile, 'utf8'))
+		if (Date.now() - snapshot.sampledAt < 20000) return snapshot
+	} catch (error) {
+		if (error.code !== 'ENOENT') console.error(error.message)
+	}
+	return emptyInventory
 }
 
 async function save(req, res) {
@@ -77,7 +113,7 @@ async function save(req, res) {
 	req.setEncoding('utf8')
 	for await (const chunk of req) {
 		body += chunk
-		if (body.length > 1024 * 1024) return json(res, 413, { error: 'Dashboard data is too large.' })
+		if (body.length > 8 * 1024 * 1024) return json(res, 413, { error: 'Dashboard data is too large.' })
 	}
 	let next
 	try {
@@ -85,10 +121,11 @@ async function save(req, res) {
 	} catch {
 		return json(res, 400, { error: 'Invalid dashboard data.' })
 	}
-	if (!validate(next)) return json(res, 400, { error: 'Use a name and valid HTTP or HTTPS URLs for each app.' })
+	if (!validate(next)) return json(res, 400, { error: 'Check the card names, HTTP or HTTPS addresses, and icons.' })
 	if (next.revision !== dashboard.revision) return json(res, 409, { error: 'The dashboard changed elsewhere. Reload to see the latest version.' })
-	const { links, widgets, wallpaper, search } = next
-	const updated = { revision: dashboard.revision + 1, links, widgets, wallpaper, search }
+	const { links, widgets, wallpaper, containers } = next
+	const cards = list => list.map(({ id, name, url, icon }) => ({ id, name, url, icon }))
+	const updated = { revision: dashboard.revision + 1, links: cards(links), widgets, wallpaper, containers: cards(containers) }
 	writeFileSync(dataFile + '.tmp', JSON.stringify(updated), { mode: 0o600 })
 	renameSync(dataFile + '.tmp', dataFile)
 	dashboard = updated
@@ -123,6 +160,7 @@ const server = createServer(async (req, res) => {
 		if (pathname === '/healthz') return json(res, 200, { ok: true })
 		if (pathname === '/api/dashboard') return json(res, 200, dashboard)
 		if (pathname === '/api/metrics') return json(res, 200, metrics())
+		if (pathname === '/api/inventory') return json(res, 200, inventory())
 		return serve(req, res, pathname)
 	} catch (error) {
 		if (error instanceof URIError) return json(res, 400, { error: 'Invalid request.' })

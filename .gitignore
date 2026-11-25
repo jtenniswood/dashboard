@@ -40,3 +40,7 @@ unused-files.json
 
 # Standalone dashboard data when running outside Docker
 /data/
+
+# Local Docker and drive inventory
+/inventory/*
+!/inventory/.gitkeep

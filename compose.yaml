@@ -1,10 +1,13 @@
 services:
   dashboard:
     build: .
+    labels:
+      dashboard.exclude: "true"
     ports:
       - "127.0.0.1:${DASHBOARD_PORT:-8180}:8080"
     volumes:
       - dashboard-data:/data
+      - ./inventory:/snapshot:ro
     restart: unless-stopped
     init: true
     healthcheck:

@@ -1,4 +1,3 @@
-<!-- Modified for Dashboard to encode search queries and open results without an opener. -->
 <template>
 	<b-field class="search-bar has-text-white mb-4" position="is-centered ">
 		<b-input v-model="keyText" class="ovh" :class="[isFocus ? 'fo' : '']" :placeholder="$t('Search...')" expanded
@@ -45,8 +44,7 @@ export default {
 		 * @return {*} void
 		 */
 		gotoSearch() {
-			const query = this.keyText.trim()
-			if (query) window.open(this.searchEngine + encodeURIComponent(query), '_blank', 'noopener,noreferrer')
+			window.open(this.searchEngine + this.keyText, '_blank')
 		},
 	},
 }
