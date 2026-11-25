@@ -47,3 +47,11 @@ The dashboard runs independently of CasaOS. On Docker Desktop the CPU and RAM wi
 ## Upstream and license
 
 The source snapshot comes from [ReCasaOS/CasaOS-UI at 6eb0735](https://github.com/ReCasaOS/CasaOS-UI/tree/6eb07359c4a6cd01edfec962d0414767fa3e3364). The standalone UI and service are under `standalone/`. See [LICENSE](LICENSE), [NOTICE](NOTICE), and [the upstream README](UPSTREAM.md) for attribution and licensing details.
+
+### Wallpaper credits
+
+- **Grand Tetons** by [Jeremy Bishop](https://unsplash.com/photos/landscape-photography-of-mountains-covered-by-snow-xsxc8yTZk0U).
+- **Dolomites at night** by [Marek Piwnicki](https://unsplash.com/photos/snowy-mountains-under-a-starry-night-sky-SumjjLhysZM).
+- **Moena under stars** by [Benjamin Voros](https://unsplash.com/photos/snow-mountain-under-stars-phIFdC6lA4E).
+
+These photographs are distributed under the [Unsplash License](https://unsplash.com/license).
