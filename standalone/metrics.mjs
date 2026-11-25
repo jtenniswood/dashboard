@@ -2,8 +2,9 @@ import { readFileSync, statfsSync } from 'node:fs'
 import { cpus, freemem, totalmem } from 'node:os'
 
 function cpuTimes() {
-	const totals = { idle: 0, time: 0 }
-	for (const { times } of cpus()) {
+	const processors = cpus()
+	const totals = { idle: 0, time: 0, cores: processors.length }
+	for (const { times } of processors) {
 		totals.idle += times.idle
 		totals.time += Object.values(times).reduce((sum, time) => sum + time, 0)
 	}
@@ -46,6 +47,7 @@ export function sampleMetrics(dataDir) {
 		const ramTotal = totalmem()
 		latest = {
 			cpuPercent,
+			cpuCores: current.cores,
 			ramTotal,
 			ramPercent: Math.round(100 * (1 - freemem() / ramTotal)),
 			diskTotal: disk.blocks * disk.bsize,

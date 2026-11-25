@@ -27,7 +27,7 @@
 						</template>
 						<p v-else-if="!metrics" class="mt-2">{{ metricsUnavailable ? 'Metrics unavailable' : 'Reading metrics…' }}</p>
 						<div v-else-if="widget === 'system'" class="columns is-mobile mt-1">
-							<div class="column is-half"><RadialBar :percent="metrics.cpuPercent" label="CPU" /></div>
+							<div class="column is-half"><RadialBar :percent="metrics.cpuPercent" :extend-content="cpuCountLabel" label="CPU" /></div>
 							<div class="column is-half"><RadialBar :percent="metrics.ramPercent" :extend-content="size(metrics.ramTotal)" label="RAM" /></div>
 						</div>
 						<template v-else-if="metrics.network">
@@ -114,6 +114,11 @@ const editingCard = ref(null)
 const pendingOrder = ref(null)
 const hostDrives = ref([])
 const webIndex = computed(() => state.value?.links.findIndex(link => link.id === editingCard.value?.id) ?? -1)
+const cpuCountLabel = computed(() => {
+	const cores = metrics.value?.cpuCores
+	if (!cores) return ''
+	return cores === 1 ? '1 core' : `${cores} cores`
+})
 const drives = computed(() => {
 	if (!metrics.value) return hostDrives.value
 	const { diskTotal: total, diskUsed: used } = metrics.value
