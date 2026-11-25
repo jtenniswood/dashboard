@@ -45,7 +45,8 @@
 				</section>
 			</aside>
 
-			<section class="main-column" aria-label="Apps">
+			<section class="main-column" aria-labelledby="app-heading">
+				<h2 id="app-heading" class="app-heading">App</h2>
 				<Draggable class="app-grid" :class="{ 'can-reorder': state.links.length > 1 }"
 					:model-value="pendingOrder ?? state.links" item-key="id" draggable=".web-card"
 					:disabled="saving || cardOpen || state.links.length < 2"
@@ -345,6 +346,14 @@ onUnmounted(() => clearInterval(timer))
 		&::-webkit-progress-bar { background: transparent; }
 		&::-webkit-progress-value { background: #2478ef; border-radius: inherit; }
 		&::-moz-progress-bar { background: #2478ef; border-radius: inherit; }
+	}
+
+	.app-heading {
+		margin-bottom: 1rem;
+		padding-inline: 0.5rem;
+		color: white;
+		font-size: 1.25rem;
+		line-height: 1.3;
 	}
 
 	.app-grid {
