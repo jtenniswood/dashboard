@@ -1,13 +1,14 @@
 <template>
 	<Teleport to="body">
 		<div v-if="entry" ref="menu" class="card-context-menu" role="menu"
-			:aria-label="entry.card?.name ?? 'Add card'" :style="position" @keydown="navigate">
+			:aria-label="entry.label" :style="position" @keydown="navigate">
 			<template v-if="entry.card">
-				<a role="menuitem" tabindex="-1" :href="entry.card.url" target="_blank" rel="noopener noreferrer" @click="close">Open link</a>
+				<a role="menuitem" tabindex="-1" :href="entry.card.url" target="_blank" rel="noopener noreferrer" @click="dismiss">Open link</a>
 				<button type="button" role="menuitem" tabindex="-1" @click="edit">Edit card</button>
 				<button type="button" role="menuitem" tabindex="-1" :disabled="!entry.canMoveEarlier" @click="move(-1)">Move earlier</button>
 				<button type="button" role="menuitem" tabindex="-1" :disabled="!entry.canMoveLater" @click="move(1)">Move later</button>
 			</template>
+			<button v-else-if="entry.wallpaper" type="button" role="menuitem" tabindex="-1" @click="chooseWallpaper">Change wallpaper</button>
 			<button v-else type="button" role="menuitem" tabindex="-1" @click="edit">Add card</button>
 		</div>
 	</Teleport>
@@ -16,7 +17,7 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 
-const emit = defineEmits(['edit', 'move'])
+const emit = defineEmits(['edit', 'move', 'wallpaper'])
 const menu = ref(null)
 const entry = shallowRef(null)
 const position = ref({ visibility: 'hidden' })
@@ -26,14 +27,13 @@ function items() {
 	return [...menu.value.querySelectorAll('[role="menuitem"]:not(:disabled)')]
 }
 
-async function open(event, card, index, count) {
-	const target = event.currentTarget
-	opener = event.target.closest('a, button') || target.querySelector('a, button') || target
+async function open(event, options) {
+	opener = options.opener || event.target.closest('a, button') || event.currentTarget.querySelector('a, button') || event.currentTarget
 	const anchor = opener.getBoundingClientRect()
 	const keyboard = event.type === 'keydown' || (!event.clientX && !event.clientY)
 	const x = keyboard ? anchor.left : event.clientX
-	const y = keyboard ? anchor.bottom : event.clientY
-	const next = { card, canMoveEarlier: index > 0, canMoveLater: index >= 0 && index < count - 1 }
+	const y = keyboard ? (options.wallpaper ? anchor.top : anchor.bottom) : event.clientY
+	const next = options
 	entry.value = next
 	position.value = { visibility: 'hidden' }
 	await nextTick()
@@ -62,6 +62,11 @@ function edit() {
 	const card = entry.value.card
 	dismiss()
 	emit('edit', card)
+}
+
+function chooseWallpaper() {
+	dismiss()
+	emit('wallpaper')
 }
 
 function move(offset) {
@@ -94,13 +99,13 @@ function closeOutside(event) {
 onMounted(() => {
 	window.addEventListener('pointerdown', closeOutside)
 	window.addEventListener('resize', close)
-	window.addEventListener('scroll', close, true)
+	window.addEventListener('wheel', close, { passive: true })
 })
 
 onUnmounted(() => {
 	window.removeEventListener('pointerdown', closeOutside)
 	window.removeEventListener('resize', close)
-	window.removeEventListener('scroll', close, true)
+	window.removeEventListener('wheel', close)
 })
 
 defineExpose({ open, close })

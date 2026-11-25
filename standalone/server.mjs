@@ -3,6 +3,7 @@ import { createReadStream, mkdirSync, readFileSync, renameSync, statSync, writeF
 import { extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sampleMetrics } from './metrics.mjs'
+import { wallpapers } from './wallpapers.mjs'
 
 const staticDir = fileURLToPath(new URL('../dist', import.meta.url)).replace(/\/$/, '')
 const dataDir = resolve(process.env.DATA_DIR || './data')
@@ -86,7 +87,7 @@ function validCards(cards) {
 
 function validate(value) {
 	return Number.isSafeInteger(value?.revision)
-		&& ['wallpaper01', 'wallpaper02'].includes(value.wallpaper)
+		&& Object.hasOwn(wallpapers, value.wallpaper)
 		&& Array.isArray(value.widgets) && new Set(value.widgets).size === value.widgets.length
 		&& value.widgets.every(widget => widgetNames.includes(widget))
 		&& validCards(value.links)

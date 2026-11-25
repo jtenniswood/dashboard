@@ -1,6 +1,9 @@
 <template>
-	<div class="dashboard is-dark-bg">
-		<div class="wallpaper" :style="{ backgroundImage: 'url(/img/wallpaper/' + wallpaper + '.jpg)' }" aria-hidden="true"></div>
+	<div class="dashboard is-dark-bg" @contextmenu="openWallpaperMenu">
+		<div ref="wallpaperSurface" class="wallpaper" :style="{ backgroundImage: 'url(' + wallpaperImage(wallpaper) + ')' }"
+			:tabindex="state ? 0 : -1" role="button" aria-label="Change wallpaper"
+			@keydown.enter.prevent="showWallpaperPicker" @keydown.space.prevent="showWallpaperPicker"
+			@keydown.shift.f10.prevent="openWallpaperMenu" @keydown.context-menu.prevent="openWallpaperMenu"></div>
 		<h1 class="is-sr-only">Dashboard</h1>
 		<main v-if="state" class="dashboard-layout">
 			<aside class="widget-column" aria-label="Widgets">
@@ -49,7 +52,7 @@
 				<h2 id="app-heading" class="app-heading">App</h2>
 				<Draggable class="app-grid" :class="{ 'can-reorder': state.links.length > 1 }"
 					:model-value="pendingOrder ?? state.links" item-key="id" draggable=".web-card"
-					:disabled="saving || cardOpen || state.links.length < 2"
+					:disabled="saving || cardOpen || wallpaperOpen || state.links.length < 2"
 					:invert-swap="true" :inverted-swap-threshold="1"
 					:force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
 					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
@@ -78,7 +81,7 @@
 						</button>
 					</template>
 				</Draggable>
-				<p v-if="error && !cardOpen" class="has-text-white mt-3" role="alert">{{ error }}</p>
+				<p v-if="error && !cardOpen && !wallpaperOpen" class="has-text-white mt-3" role="alert">{{ error }}</p>
 			</section>
 		</main>
 		<p v-else class="container has-text-white" role="status">
@@ -86,13 +89,33 @@
 			<button v-if="error" type="button" class="button is-small ml-2" @click="load">Retry</button>
 		</p>
 
-		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" />
+		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" @wallpaper="showWallpaperPicker" />
 
 		<b-modal v-model="cardOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
 			<CardEditor v-if="editingCard" :key="editingCard.id" :card="editingCard"
 				:can-remove="webIndex >= 0" :can-move-earlier="webIndex > 0"
 				:can-move-later="webIndex < state.links.length - 1" :error="error" :saving="saving"
 				@save="saveCard" @cancel="cardOpen = false" @remove="deleteCard" @move="moveCard(editingCard.id, $event)" />
+		</b-modal>
+		<b-modal v-model="wallpaperOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Change wallpaper">
+			<div class="modal-card wallpaper-picker">
+				<header class="modal-card-head"><h2 class="modal-card-title">Change wallpaper</h2></header>
+				<section class="modal-card-body">
+					<div class="wallpaper-grid">
+						<button v-for="(label, id) in wallpapers" :key="id" class="wallpaper-choice" type="button"
+							:aria-pressed="id === wallpaper" :disabled="saving" @click="chooseWallpaper(id)">
+							<img :src="wallpaperImage(id)" alt="">
+							<span>{{ label }}</span>
+						</button>
+					</div>
+					<p v-if="error" class="has-text-danger mt-3" role="alert">{{ error }}</p>
+				</section>
+				<footer class="modal-card-foot modal-actions">
+					<div class="right-actions">
+						<b-button :disabled="saving" @click="wallpaperOpen = false">Cancel</b-button>
+					</div>
+				</footer>
+			</div>
 		</b-modal>
 	</div>
 </template>
@@ -104,6 +127,7 @@ import Draggable from 'vuedraggable'
 import CardContextMenu from './CardContextMenu.vue'
 import CardEditor from './CardEditor.vue'
 import CardIcon from './CardIcon.vue'
+import { wallpapers } from './wallpapers.mjs'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import storageIcon from '@/assets/img/storage/storage.svg'
 
@@ -115,6 +139,8 @@ const metricsUnavailable = ref(false)
 const error = ref('')
 const saving = ref(false)
 const cardOpen = ref(false)
+const wallpaperOpen = ref(false)
+const wallpaperSurface = ref(null)
 const editingCard = ref(null)
 const pendingOrder = ref(null)
 const contextMenu = ref(null)
@@ -255,15 +281,42 @@ async function reorderCards(links) {
 }
 
 function openContextMenu(event, card) {
-	if (dragging || saving.value || cardOpen.value || event.pointerType === 'touch') return
+	if (dragging || saving.value || cardOpen.value || wallpaperOpen.value || event.pointerType === 'touch') return
 	const links = state.value.links
-	contextMenu.value.open(event, card, links.findIndex(link => link.id === card?.id), links.length)
+	const index = links.findIndex(link => link.id === card?.id)
+	contextMenu.value.open(event, {
+		card,
+		label: card?.name ?? 'Add card',
+		canMoveEarlier: index > 0,
+		canMoveLater: index >= 0 && index < links.length - 1,
+	})
 }
 
 function openContextMenuFromKey(event, card) {
 	if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return
 	event.preventDefault()
 	openContextMenu(event, card)
+}
+
+function wallpaperImage(id) {
+	return `/img/wallpaper/${id}.jpg`
+}
+
+function openWallpaperMenu(event) {
+	if (!state.value || dragging || saving.value || cardOpen.value || wallpaperOpen.value) return
+	if (event.type !== 'keydown' && (event.defaultPrevented || event.target.closest('.widget, a, button, .app-card'))) return
+	event.preventDefault()
+	contextMenu.value.open(event, { wallpaper: true, opener: wallpaperSurface.value, label: 'Background' })
+}
+
+function showWallpaperPicker() {
+	if (!state.value || dragging || cardOpen.value) return
+	error.value = ''
+	wallpaperOpen.value = true
+}
+
+async function chooseWallpaper(id) {
+	if (id === wallpaper.value || await save({ wallpaper: id })) wallpaperOpen.value = false
 }
 
 async function moveCard(id, offset) {
@@ -300,6 +353,8 @@ onUnmounted(() => clearInterval(timer))
 		background-position: center;
 		background-size: cover;
 		pointer-events: none;
+
+		&:focus-visible { outline: 2px solid #b9e9ff; outline-offset: -6px; }
 	}
 
 	.dashboard-layout {
@@ -496,6 +551,30 @@ onUnmounted(() => clearInterval(timer))
 
 		> .blur-background { backdrop-filter: none; }
 	}
+}
+
+.wallpaper-picker { width: min(42rem, calc(100vw - 2rem)); }
+.wallpaper-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+	gap: 0.75rem;
+}
+.wallpaper-choice {
+	overflow: hidden;
+	display: grid;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	border: 2px solid transparent;
+	border-radius: 0.55rem;
+	background: #f1f5f9;
+	color: #183343;
+	font: inherit;
+	cursor: pointer;
+
+	&:focus-visible, &[aria-pressed="true"] { border-color: #2478ef; }
+	&:focus-visible { outline: 2px solid #2478ef; outline-offset: 2px; }
+	img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 0.3rem; }
+	span { padding: 0.15rem 0.25rem; }
 }
 
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }

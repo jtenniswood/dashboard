@@ -36,6 +36,7 @@ async function declaredIcons(address) {
 	try {
 		const response = await fetch(address, {
 			credentials: 'omit',
+			redirect: 'error',
 			referrerPolicy: 'no-referrer',
 			signal: AbortSignal.timeout(3500),
 		})

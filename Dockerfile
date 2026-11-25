@@ -10,7 +10,7 @@ FROM node:24-bookworm-slim
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data
 WORKDIR /app
 COPY --from=build /build/dist ./dist
-COPY standalone/server.mjs standalone/metrics.mjs ./standalone/
+COPY standalone/server.mjs standalone/metrics.mjs standalone/wallpapers.mjs ./standalone/
 COPY LICENSE NOTICE ./
 RUN mkdir /data && chown node:node /data
 USER node
