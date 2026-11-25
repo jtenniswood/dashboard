@@ -10,7 +10,7 @@ cd dashboard
 docker compose up -d --build --wait
 ```
 
-Open [http://localhost:8180](http://localhost:8180). Use the **+** card at the end of the app grid to add a web link. Drag cards to reorder them. On touch screens, press and hold a card briefly before dragging. The dashed outline shows where it will land. Right-click a card to open, edit, or move it. To remove a card, open its editor. On touch screens the menu is always visible. Each card supports an icon URL or an uploaded PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card.
+Open [http://localhost:8180](http://localhost:8180). Use the **+** card at the end of the app grid to add a web link. Drag cards to reorder them. On touch screens, press and hold a card briefly before dragging. The dashed outline shows where it will land. Right-click a card to open, edit, or move it. To remove a card, open its editor. On touch screens the menu is always visible. Cards try the linked site’s icon automatically. To override it, enter an icon URL or upload a PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card.
 
 The Docker volume keeps your web cards through container restarts and image rebuilds. To use a different local port, set `DASHBOARD_PORT` when running Docker Compose.
 

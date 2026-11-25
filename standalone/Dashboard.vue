@@ -61,10 +61,7 @@
 							<div class="web-card-surface">
 								<div class="blur-background"></div>
 								<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
-									<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" draggable="false" @error="fallbackIcon">
-									<span v-else class="tile-icon" aria-hidden="true">
-										<b-icon icon="web" size="is-medium" />
-									</span>
+									<CardIcon :address="card.url" :icon="card.icon" />
 									<span class="one-line">{{ card.name }}</span>
 								</a>
 							</div>
@@ -106,11 +103,11 @@ import { nanoid } from 'nanoid'
 import Draggable from 'vuedraggable'
 import CardContextMenu from './CardContextMenu.vue'
 import CardEditor from './CardEditor.vue'
+import CardIcon from './CardIcon.vue'
 import RadialBar from '@/components/widgets/RadialBar.vue'
-import defaultIcon from '@/assets/img/app/default.svg'
 import storageIcon from '@/assets/img/storage/storage.svg'
 
-const widgetNames = { system: 'System status', storage: 'Storage', network: 'Network status' }
+const widgetNames = { system: 'System', storage: 'Storage', network: 'Network status' }
 const state = ref(null)
 const metrics = ref(null)
 const networkHistory = ref([])
@@ -277,10 +274,6 @@ async function moveCard(id, offset) {
 	const [link] = links.splice(index, 1)
 	links.splice(to, 0, link)
 	await save({ links })
-}
-
-function fallbackIcon(event) {
-	if (event.target.getAttribute('src') !== defaultIcon) event.target.src = defaultIcon
 }
 
 onMounted(() => {
