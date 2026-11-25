@@ -5,7 +5,7 @@ A Docker-hosted start page built from the [ReCasaOS dashboard](https://github.co
 ## Run with Docker
 
 ```sh
-git clone -b standalone-dashboard https://github.com/jtenniswood/dashboard.git
+git clone https://github.com/jtenniswood/dashboard.git
 cd dashboard
 docker compose up -d --build --wait
 ```
