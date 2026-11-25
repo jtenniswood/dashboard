@@ -406,6 +406,7 @@ onUnmounted(() => clearInterval(timer))
 
 		> .blur-background {
 			background-color: rgb(32 32 32 / 62%);
+			backdrop-filter: blur(5px) grayscale(1);
 			border-color: rgb(255 255 255 / 12%);
 		}
 	}
