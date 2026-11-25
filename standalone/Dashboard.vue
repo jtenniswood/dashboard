@@ -16,8 +16,8 @@
 									<div>
 										<p class="drive-name">{{ drive.name }}</p>
 										<template v-if="drive.total">
-											<p>Used: {{ Math.round(driveUsage(drive)) }}%</p>
-											<p>Total: {{ driveSize(drive.total) }}</p>
+											<p class="drive-reading">Used: {{ Math.round(driveUsage(drive)) }}%</p>
+											<p class="drive-reading">Total: {{ driveSize(drive.total) }}</p>
 										</template>
 										<p v-else>Capacity unavailable</p>
 									</div>
@@ -361,6 +361,7 @@ onUnmounted(() => clearInterval(timer))
 		line-height: 1.45;
 	}
 	.drive-name { color: #f4fbff; font-weight: 600; }
+	.drive-reading { color: rgb(216 234 244 / 82%); }
 	.drive-details img { flex: 0 0 58px; }
 	.drive-progress {
 		display: block;
