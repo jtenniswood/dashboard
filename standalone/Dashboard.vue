@@ -48,8 +48,9 @@
 			<section class="main-column" aria-label="Apps">
 				<Draggable class="app-grid" :class="{ 'can-reorder': state.links.length > 1 }"
 					:model-value="pendingOrder ?? state.links" item-key="id" draggable=".web-card"
-					:disabled="saving || cardOpen || state.links.length < 2" :animation="150"
-					:force-fallback="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
+					:disabled="saving || cardOpen || state.links.length < 2"
+					:invert-swap="true" :inverted-swap-threshold="1"
+					:force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
 					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
 					ghost-class="card-drop-position" fallback-class="card-drag-preview"
 					@update:model-value="reorderCards">
@@ -375,6 +376,7 @@ onUnmounted(() => clearInterval(timer))
 		&:focus-visible { outline: 2px solid white; border-radius: inherit; }
 	}
 
+	.web-card { transition: box-shadow 0.3s; }
 	.can-reorder .web-card .app-link { cursor: grab; }
 
 	.web-card.card-drop-position {
@@ -383,7 +385,6 @@ onUnmounted(() => clearInterval(timer))
 		background: rgb(4 67 106 / 55%);
 	}
 	.card-drop-position > * { visibility: hidden; }
-	.card-drag-preview { opacity: 0.9; }
 
 	.tile-icon {
 		display: grid;
@@ -420,6 +421,8 @@ onUnmounted(() => clearInterval(timer))
 	.download-line { stroke: #8acbff; }
 	.upload-line { stroke: #7ff2be; }
 }
+
+.card-drag-preview { visibility: hidden; }
 
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .right-actions { margin-left: auto; display: flex; gap: 0.5rem; }
