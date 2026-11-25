@@ -10,7 +10,7 @@ cd dashboard
 docker compose up -d --build --wait
 ```
 
-Open [http://localhost:8180](http://localhost:8180). Click **+** in the app grid to create a web card. Click a running container’s tile to set its launch address, or hover and open the tile’s menu to edit a card that already has an address. On touch screens the menu is always visible. Both kinds of cards support an icon URL or an uploaded PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card. Click the sliders in the toolbar or **Widget settings** to change the dashboard appearance.
+Open [http://localhost:8180](http://localhost:8180). Click **+** in the app grid to create a web card. Click a running container’s tile to set its launch address, or hover and open the tile’s menu to edit a card that already has an address. On touch screens the menu is always visible. Both kinds of cards support an icon URL or an uploaded PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card. Click the sliders in the toolbar to change the dashboard appearance.
 
 The Docker volume keeps your cards, container customizations, wallpaper, and widget choices through container restarts and image rebuilds. Container settings follow the Docker container name when you recreate a container with the same name. The theme preference is saved in each browser. To use a different local port, set `DASHBOARD_PORT` when running Docker Compose.
 

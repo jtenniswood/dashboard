@@ -10,9 +10,6 @@
 				<button type="button" class="toolbar-button" aria-label="Settings" @click="openSettings">
 					<b-icon icon="tune-vertical" />
 				</button>
-				<button type="button" class="toolbar-button" aria-label="Drive capacities" @click="storageOpen = true">
-					<b-icon icon="harddisk" />
-				</button>
 				<button type="button" class="toolbar-button mobile-widgets" aria-label="Widgets" :aria-expanded="showWidgets" @click="showWidgets = !showWidgets">
 					<b-icon icon="view-dashboard-outline" />
 				</button>
@@ -64,10 +61,6 @@
 						<p v-else class="mt-2">Network metrics unavailable</p>
 					</div>
 				</section>
-				<button type="button" class="widget widget-settings" @click="openSettings">
-					<div class="blur-background"></div>
-					<span class="widget-content widget-heading"><span class="widget-title">Widget settings</span><b-icon icon="chevron-right" /></span>
-				</button>
 			</aside>
 
 			<section class="main-column" aria-labelledby="apps-heading">
@@ -431,14 +424,12 @@ onUnmounted(() => clearInterval(timer))
 	}
 
 	.blur-background { inset: 0; pointer-events: none; }
-	.widget-settings, .empty-card {
+	.empty-card {
 		border: 0;
 		background: transparent;
 		font: inherit;
 		cursor: pointer;
 	}
-	.widget-settings { width: 100%; color: white; text-align: left; }
-	.widget-settings .widget-content { padding-block: 0.85rem; }
 	.drive { margin-top: 0.75rem; }
 	.drive + .drive { margin-top: 1rem; }
 	.drive-details { display: flex; gap: 0.65rem; align-items: center; font-size: 0.82rem; }
