@@ -18,7 +18,7 @@
 				</button>
 			</div>
 		</header>
-		<main v-if="state" class="dashboard-layout container">
+		<main v-if="state" class="dashboard-layout">
 			<aside class="widget-column" :class="{ 'widgets-open': showWidgets }" aria-label="Widgets">
 				<section v-for="widget in state.widgets" :key="widget" class="widget has-text-white">
 					<div class="blur-background"></div>
@@ -85,7 +85,7 @@
 							:type="card.url ? undefined : 'button'" :target="card.url ? '_blank' : undefined" :rel="card.url ? 'noopener noreferrer' : undefined"
 							@click="!card.url && openCard(card.kind, card)">
 							<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" @error="fallbackIcon">
-							<span v-else class="tile-icon" :class="card.kind" aria-hidden="true">
+							<span v-else class="tile-icon" :class="{ 'web-icon': card.kind === 'web' }" aria-hidden="true">
 								<b-icon :icon="card.kind === 'container' ? 'cube-outline' : 'web'" size="is-medium" />
 							</span>
 							<span class="one-line">{{ card.name }}</span>
@@ -393,11 +393,11 @@ onUnmounted(() => clearInterval(timer))
 	.bar-actions { gap: 0.45rem; }
 
 	.dashboard-layout {
+		position: relative;
 		display: grid;
 		grid-template-columns: minmax(222px, 1fr) minmax(0, 3.1fr);
 		width: min(calc(100% - 3rem), 1344px);
-		max-width: none;
-		margin-top: 2rem;
+		margin: 2rem auto 0;
 		gap: 1rem;
 	}
 
@@ -486,7 +486,7 @@ onUnmounted(() => clearInterval(timer))
 		background: #2a75cc;
 		box-shadow: 0 1px 3px #0005;
 	}
-	.tile-icon.web { background: #10969b; }
+	.tile-icon.web-icon { background: #10969b; }
 
 	.card-action {
 		position: absolute;
@@ -513,7 +513,7 @@ onUnmounted(() => clearInterval(timer))
 	.upload-line { stroke: #7ff2be; }
 }
 
-.modal-card { max-width: calc(100vw - 2rem); }
+.modal-card { max-width: min(640px, calc(100vw - 2rem)); }
 .modal-card .settings-options { display: grid; gap: 0.65rem; }
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .right-actions { margin-left: auto; display: flex; gap: 0.5rem; }
