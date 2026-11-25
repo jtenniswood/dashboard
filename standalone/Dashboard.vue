@@ -4,7 +4,7 @@
 		<h1 class="is-sr-only">Dashboard</h1>
 		<main v-if="state" class="dashboard-layout">
 			<aside class="widget-column" aria-label="Widgets">
-				<section v-for="widget in state.widgets" :key="widget" class="widget has-text-white" :class="{ 'storage-widget': widget === 'storage' }">
+				<section v-for="widget in state.widgets" :key="widget" class="widget has-text-white" :class="widget + '-widget'">
 					<div class="blur-background"></div>
 					<div class="widget-content">
 						<h2 class="widget-title">{{ widgetNames[widget] }}</h2>
@@ -345,6 +345,11 @@ onUnmounted(() => clearInterval(timer))
 	.widget-title {
 		font-size: 1.25rem;
 		line-height: 1.3;
+	}
+
+	.system-widget {
+		> .widget-content { padding-bottom: 0.625rem; }
+		.column { padding-bottom: 0.25rem; }
 	}
 
 	.storage-widget > .blur-background {
