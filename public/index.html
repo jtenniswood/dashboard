@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- Modified for Dashboard to use its own title and manifest and always render in light mode. -->
+<!-- data-theme is the theme switch: Bulma 1 only follows the OS on its own
+     through an unguarded @media (prefers-color-scheme: dark) block, so the
+     attribute always carries a concrete value. "light" here is the no-JS
+     default; the inline script below replaces it with the stored preference
+     before anything paints. -->
+<html lang="<%= htmlWebpackPlugin.options.title === 'Dashboard' ? 'en' : '' %>" data-theme="light">
+
+<head>
+	<meta charset="utf-8">
+	<meta content="IE=edge" http-equiv="X-UA-Compatible">
+	<meta content="width=device-width,initial-scale=1" name="viewport">
+	<meta content="noindex" name="robots">
+	<link href="<%= BASE_URL %>img/icon/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180">
+	<link href="<%= BASE_URL %><%= htmlWebpackPlugin.options.title === 'Dashboard' ? 'dashboard.webmanifest' : 'site.webmanifest' %>" rel="manifest">
+	<meta content="#151515" name="msapplication-TileColor">
+	<meta content="#ffffff" name="theme-color">
+	<link href="<%= BASE_URL %>favicon.ico" rel="shortcut icon" type="image/x-icon">
+	<link href="<%= BASE_URL %>favicon.svg" rel="icon" type="image/svg+xml">
+	<% if (htmlWebpackPlugin.options.title === 'Dashboard') { %>
+	<meta content="light" name="color-scheme">
+	<% } else { %>
+	<!-- Same three rules as src/mixins/app/themePreference.js, inlined so the
+	     theme is settled before the stylesheet arrives: a stored light/dark wins,
+	     anything else follows the OS. theme-color follows the attribute:
+	     #1f2023 is --casa-surface in dark. -->
+	<script>
+		try {
+			var theme = localStorage.getItem('theme')
+			theme = theme === 'light' || theme === 'dark'
+				? theme
+				: (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+			document.documentElement.dataset.theme = theme
+			document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1f2023' : '#ffffff'
+		} catch (e) {}
+	</script>
+	<% } %>
+	<!-- Ground before the extracted CSS lands: #fff is what Bulma paints on
+	     <html> in light, #000 is what the dashboard paints under the wallpaper.
+	     html[data-theme] outranks Bulma's bare html rule. -->
+	<style>
+		html[data-theme=light] { background: #fff; }
+		html[data-theme=dark] { background: #000; color-scheme: dark; }
+	</style>
+	<link href="<%= BASE_URL %>css/animate.min.css" rel="stylesheet">
+	<link href="<%= BASE_URL %>css/custom.css" rel="stylesheet">
+	<title>
+		<%= htmlWebpackPlugin.options.title === 'Dashboard' ? 'Dashboard' : 'ReCasaOS' %>
+	</title>
+</head>
+
+<body>
+	<noscript>
+		<strong>Enable JavaScript to use this dashboard.</strong>
+	</noscript>
+	<div id="app"></div>
+	<!-- built files will be auto injected -->
+	<script type="text/javascript" src="<%= BASE_URL %>js/custom.js"></script>
+</body>
+
+</html>
