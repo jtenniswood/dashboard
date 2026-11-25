@@ -9,14 +9,13 @@ const dataDir = resolve(process.env.DATA_DIR || './data')
 const dataFile = resolve(dataDir, 'dashboard.json')
 const inventoryFile = '/snapshot/inventory.json'
 const widgetNames = ['system', 'storage', 'network']
-const emptyInventory = { containers: null, drives: null }
+const emptyInventory = { drives: [] }
 const port = Number(process.env.PORT || 8080)
 const defaults = {
 	revision: 0,
 	links: [],
 	wallpaper: 'wallpaper01',
 	widgets: ['system', 'storage'],
-	containers: [],
 }
 const mime = {
 	'.css': 'text/css; charset=utf-8',
@@ -35,10 +34,10 @@ mkdirSync(dataDir, { recursive: true })
 let dashboard = defaults
 try {
 	const saved = JSON.parse(readFileSync(dataFile, 'utf8'))
-	const wasDefault = !saved.containers && saved.widgets.join(',') === 'clock,system,storage,network'
+	const wasDefault = saved.widgets.join(',') === 'clock,system,storage,network'
 	const widgets = wasDefault ? defaults.widgets : saved.widgets.filter(widget => widgetNames.includes(widget))
-	dashboard = { ...defaults, ...saved, widgets }
-	delete dashboard.search
+	const { revision, links, wallpaper } = saved
+	dashboard = { revision, links, wallpaper, widgets }
 } catch (error) {
 	if (error.code !== 'ENOENT') throw error
 }
@@ -72,13 +71,13 @@ function validIcon(value) {
 		&& png.readUInt32BE(20) > 0 && png.readUInt32BE(20) <= 128
 }
 
-function validCards(cards, validId, urlRequired) {
+function validCards(cards) {
 	if (!Array.isArray(cards) || cards.length > 200) return false
 	const ids = new Set()
 	for (const card of cards) {
-		if (typeof card?.id !== 'string' || !validId.test(card.id) || ids.has(card.id)
-			|| typeof card.name !== 'string' || !card.name.trim() || card.name.length > (urlRequired ? 80 : 255)
-			|| !(validURL(card.url) || (!urlRequired && card.url === ''))
+		if (typeof card?.id !== 'string' || !/^[a-zA-Z0-9_-]{10,40}$/.test(card.id) || ids.has(card.id)
+			|| typeof card.name !== 'string' || !card.name.trim() || card.name.length > 80
+			|| !validURL(card.url)
 			|| !validIcon(card.icon)) return false
 		ids.add(card.id)
 	}
@@ -90,14 +89,13 @@ function validate(value) {
 		&& ['wallpaper01', 'wallpaper02'].includes(value.wallpaper)
 		&& Array.isArray(value.widgets) && new Set(value.widgets).size === value.widgets.length
 		&& value.widgets.every(widget => widgetNames.includes(widget))
-		&& validCards(value.links, /^[a-zA-Z0-9_-]{10,40}$/, true)
-		&& validCards(value.containers, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,254}$/, false)
+		&& validCards(value.links)
 }
 
 function inventory() {
 	try {
 		const snapshot = JSON.parse(readFileSync(inventoryFile, 'utf8'))
-		if (Date.now() - snapshot.sampledAt < 20000) return snapshot
+		if (Date.now() - snapshot.sampledAt < 20000 && Array.isArray(snapshot.drives)) return { drives: snapshot.drives }
 	} catch (error) {
 		if (error.code !== 'ENOENT') console.error(error.message)
 	}
@@ -123,9 +121,13 @@ async function save(req, res) {
 	}
 	if (!validate(next)) return json(res, 400, { error: 'Check the card names, HTTP or HTTPS addresses, and icons.' })
 	if (next.revision !== dashboard.revision) return json(res, 409, { error: 'The dashboard changed elsewhere. Reload to see the latest version.' })
-	const { links, widgets, wallpaper, containers } = next
-	const cards = list => list.map(({ id, name, url, icon }) => ({ id, name, url, icon }))
-	const updated = { revision: dashboard.revision + 1, links: cards(links), widgets, wallpaper, containers: cards(containers) }
+	const { links, widgets, wallpaper } = next
+	const updated = {
+		revision: dashboard.revision + 1,
+		links: links.map(({ id, name, url, icon }) => ({ id, name, url, icon })),
+		widgets,
+		wallpaper,
+	}
 	writeFileSync(dataFile + '.tmp', JSON.stringify(updated), { mode: 0o600 })
 	renameSync(dataFile + '.tmp', dataFile)
 	dashboard = updated

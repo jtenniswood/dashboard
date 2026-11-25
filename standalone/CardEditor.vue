@@ -2,12 +2,11 @@
 	<form class="modal-card" @submit.prevent="submit">
 		<header class="modal-card-head"><h2 class="modal-card-title">{{ title }}</h2></header>
 		<section class="modal-card-body">
-			<p v-if="ports.length" class="mb-4 is-size-7">Published host ports {{ ports.join(', ') }}</p>
 			<b-field label="Name" label-for="card-name">
-				<input id="card-name" v-model.trim="draft.name" class="input" :maxlength="kind === 'container' ? 255 : 80" required>
+				<input id="card-name" v-model.trim="draft.name" class="input" maxlength="80" required>
 			</b-field>
 			<b-field label="Address" label-for="card-url">
-				<input id="card-url" v-model.trim="draft.url" class="input" type="url" placeholder="https://example.com" maxlength="2048" :required="kind === 'web'">
+				<input id="card-url" v-model.trim="draft.url" class="input" type="url" placeholder="https://example.com" maxlength="2048" required>
 			</b-field>
 			<b-field label="Icon URL" label-for="card-icon">
 				<input id="card-icon" v-model.trim="iconURL" class="input" type="url" maxlength="2048" placeholder="https://example.com/icon.png" @input="clearUpload">
@@ -30,7 +29,7 @@
 			<b-button v-if="canRemove" type="is-danger is-light" :disabled="saving" @click="remove">{{ confirmRemoval ? 'Confirm removal' : 'Remove' }}</b-button>
 			<div class="right-actions">
 				<b-button :disabled="saving" @click="$emit('cancel')">Cancel</b-button>
-				<b-button native-type="submit" type="is-primary" :loading="saving || processing" :disabled="!!uploadError">{{ canRemove || kind === 'container' ? 'Save' : 'Add web card' }}</b-button>
+				<b-button native-type="submit" type="is-primary" :loading="saving || processing" :disabled="!!uploadError">{{ canRemove ? 'Save' : 'Add web card' }}</b-button>
 			</div>
 		</footer>
 	</form>
@@ -41,8 +40,6 @@ import { computed, ref } from 'vue'
 
 const props = defineProps({
 	card: { type: Object, required: true },
-	kind: { type: String, required: true },
-	ports: { type: Array, default: () => [] },
 	canRemove: Boolean,
 	canMoveEarlier: Boolean,
 	canMoveLater: Boolean,
@@ -56,7 +53,7 @@ const iconURL = ref(upload.value ? '' : props.card.icon)
 const processing = ref(false)
 const uploadError = ref('')
 const confirmRemoval = ref(false)
-const title = computed(() => props.kind === 'container' ? 'Customize container' : props.canRemove ? 'Edit web card' : 'Add web card')
+const title = computed(() => props.canRemove ? 'Edit web card' : 'Add web card')
 let selection = 0
 
 function clearUpload() {

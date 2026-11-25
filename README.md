@@ -10,25 +10,25 @@ cd dashboard
 docker compose up -d --build --wait
 ```
 
-Open [http://localhost:8180](http://localhost:8180). Click **+** in the app grid to create a web card. Click a running container’s tile to set its launch address, or hover and open the tile’s menu to edit a card that already has an address. On touch screens the menu is always visible. Both kinds of cards support an icon URL or an uploaded PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card. Click the sliders in the toolbar to change the wallpaper or choose which widgets to show.
+Open [http://localhost:8180](http://localhost:8180). Use the **+** card at the end of the app grid to add a web link. Hover over a card and open its menu to edit, move, or remove it. On touch screens the menu is always visible. Each card supports an icon URL or an uploaded PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card.
 
-The Docker volume keeps your cards, container customizations, wallpaper, and widget choices through container restarts and image rebuilds. Container settings follow the Docker container name when you recreate a container with the same name. To use a different local port, set `DASHBOARD_PORT` when running Docker Compose.
+The Docker volume keeps your web cards through container restarts and image rebuilds. To use a different local port, set `DASHBOARD_PORT` when running Docker Compose.
 
-## Show running containers and drive capacities
+## Show drive capacities
 
-Run the inventory helper on the Docker host using Node.js 24 and the same Docker context you use to start the dashboard. Leave it running in a separate terminal while you use the live inventory:
+Run the inventory helper on the Docker host using Node.js 24. Leave it running in a separate terminal while you use the live drive readings:
 
 ```sh
 node standalone/host-inventory.mjs
 ```
 
-It lists running containers from that Docker context and reads the capacity of the filesystem containing your home folder. The dashboard also shows the Docker data filesystem. To include an additional mounted drive or network share, give the helper a path on that drive. Repeat `--drive` for more drives:
+The helper reads the capacity of the filesystem containing your home folder. The dashboard also shows the Docker data filesystem. To include an additional mounted drive or network share, give the helper a path on that drive. Repeat `--drive` for more drives:
 
 ```sh
 node standalone/host-inventory.mjs --drive "Media=/path/to/mounted/media" --drive "Backup=/path/to/mounted/backup"
 ```
 
-The helper writes only container names, published TCP ports, and capacity totals to the local `inventory/` folder. Docker mounts that folder read-only. The dashboard container never receives the Docker socket or mounts of your drives. Label infrastructure containers `dashboard.exclude=true` to keep them out of the app grid. Capacity readings show filesystem space. Drive health and hardware diagnostics require separate tools.
+The helper writes capacity totals to the local `inventory/` folder. Docker mounts that folder read-only. The dashboard container never receives the Docker socket or mounts of your drives. Capacity readings show filesystem space. Drive health and hardware diagnostics require separate tools.
 
 ## Open it over Tailscale
 

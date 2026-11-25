@@ -1,31 +1,13 @@
 <template>
 	<div class="dashboard is-dark-bg">
 		<div class="wallpaper" :style="{ backgroundImage: 'url(/img/wallpaper/' + wallpaper + '.jpg)' }" aria-hidden="true"></div>
-		<header class="dashboard-bar" aria-label="Dashboard controls">
-			<h1 class="is-sr-only">Dashboard</h1>
-			<div v-if="state" class="bar-actions">
-				<button type="button" class="toolbar-button" aria-label="System overview" @click="openSystem">
-					<b-icon icon="chart-box-outline" />
-				</button>
-				<button type="button" class="toolbar-button" aria-label="Settings" @click="openSettings">
-					<b-icon icon="tune-vertical" />
-				</button>
-				<button type="button" class="toolbar-button mobile-widgets" aria-label="Widgets" :aria-expanded="showWidgets" @click="showWidgets = !showWidgets">
-					<b-icon icon="view-dashboard-outline" />
-				</button>
-			</div>
-		</header>
+		<h1 class="is-sr-only">Dashboard</h1>
 		<main v-if="state" class="dashboard-layout">
-			<aside class="widget-column" :class="{ 'widgets-open': showWidgets }" aria-label="Widgets">
-				<section v-for="widget in state.widgets" :key="widget" class="widget has-text-white">
+			<aside class="widget-column" aria-label="Widgets">
+				<section v-for="widget in state.widgets" :key="widget" class="widget has-text-white" :class="{ 'storage-widget': widget === 'storage' }">
 					<div class="blur-background"></div>
 					<div class="widget-content">
-						<div class="widget-heading">
-							<h2 class="widget-title">{{ widgetNames[widget] }}</h2>
-							<button v-if="widget !== 'network'" type="button" class="plain-button" :aria-label="widget === 'system' ? 'System details' : 'Storage details'" @click="widget === 'system' ? openSystem() : storageOpen = true">
-								<b-icon :icon="widget === 'system' ? 'chevron-right' : 'cog-outline'" />
-							</button>
-						</div>
+						<h2 class="widget-title">{{ widgetNames[widget] }}</h2>
 						<template v-if="widget === 'storage'">
 							<p v-if="!drives.length" class="mt-2">Reading drive capacities…</p>
 							<div v-for="drive in drives" :key="drive.name" class="drive">
@@ -34,13 +16,15 @@
 									<div>
 										<p class="drive-name">{{ drive.name }}</p>
 										<template v-if="drive.total">
-											<p>Used: {{ size(drive.used) }}</p>
-											<p>Total: {{ size(drive.total) }}</p>
+											<span class="drive-usage">{{ Math.round(driveUsage(drive)) }}% used</span>
+											<p>Used: {{ driveSize(drive.used) }}</p>
+											<p>Available: {{ driveSize(drive.available) }}</p>
+											<p>Total: {{ driveSize(drive.total) }}</p>
 										</template>
 										<p v-else>Capacity unavailable</p>
 									</div>
 								</div>
-								<b-progress v-if="drive.total" class="mt-2" size="is-small" type="is-info" :value="100 * drive.used / drive.total" :aria-label="drive.name + ' used'" />
+								<progress v-if="drive.total" class="drive-progress" :value="driveUsage(drive)" max="100" :aria-label="drive.name + ' used'"></progress>
 							</div>
 						</template>
 						<p v-else-if="!metrics" class="mt-2">{{ metricsUnavailable ? 'Metrics unavailable' : 'Reading metrics…' }}</p>
@@ -63,33 +47,24 @@
 				</section>
 			</aside>
 
-			<section class="main-column" aria-labelledby="apps-heading">
-				<div class="section-heading">
-					<h2 id="apps-heading">Apps</h2>
-					<button type="button" class="plain-button" aria-label="Add web card" @click="openCard('web')">
-						<b-icon icon="plus" />
-					</button>
-				</div>
-				<p v-if="inventoryUnavailable" class="inventory-status" role="status">Docker inventory unavailable. Web cards are still available.</p>
+			<section class="main-column" aria-label="Apps">
 				<div class="app-grid">
-					<article v-for="card in cards" :key="card.kind + ':' + card.id" class="app-card common-card">
+					<article v-for="card in state.links" :key="card.id" class="app-card common-card">
 						<div class="blur-background"></div>
-						<component :is="card.url ? 'a' : 'button'" class="app-link" :href="card.url || undefined"
-							:type="card.url ? undefined : 'button'" :target="card.url ? '_blank' : undefined" :rel="card.url ? 'noopener noreferrer' : undefined"
-							@click="!card.url && openCard(card.kind, card)">
+						<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer">
 							<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" @error="fallbackIcon">
-							<span v-else class="tile-icon" :class="{ 'web-icon': card.kind === 'web' }" aria-hidden="true">
-								<b-icon :icon="card.kind === 'container' ? 'cube-outline' : 'web'" size="is-medium" />
+							<span v-else class="tile-icon" aria-hidden="true">
+								<b-icon icon="web" size="is-medium" />
 							</span>
 							<span class="one-line">{{ card.name }}</span>
-						</component>
-						<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" @click="openCard(card.kind, card)">
+						</a>
+						<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" @click="openCard(card)">
 							<b-icon icon="dots-horizontal" />
 						</button>
 					</article>
-					<button v-if="!cards.length && inventoryLoaded" type="button" class="app-card common-card empty-card" @click="openCard('web')">
+					<button type="button" class="app-card common-card add-card" @click="openCard()">
 						<div class="blur-background"></div>
-						<span class="app-link"><b-icon icon="plus-circle-outline" size="is-large" aria-hidden="true" /><span>Add web card</span></span>
+						<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add web card</span></span>
 					</button>
 				</div>
 			</section>
@@ -100,61 +75,10 @@
 		</p>
 
 		<b-modal v-model="cardOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
-			<CardEditor v-if="editingCard" :key="editingCard.kind + ':' + editingCard.id" :card="editingCard" :kind="editingCard.kind"
-				:ports="editingCard.ports" :can-remove="webIndex >= 0" :can-move-earlier="webIndex > 0"
+			<CardEditor v-if="editingCard" :key="editingCard.id" :card="editingCard"
+				:can-remove="webIndex >= 0" :can-move-earlier="webIndex > 0"
 				:can-move-later="webIndex < state.links.length - 1" :error="error" :saving="saving"
 				@save="saveCard" @cancel="cardOpen = false" @remove="deleteCard" @move="moveWeb" />
-		</b-modal>
-
-		<b-modal v-model="systemOpen" has-modal-card aria-role="dialog" aria-modal aria-label="System details">
-			<div class="modal-card">
-				<header class="modal-card-head"><h2 class="modal-card-title">System details</h2></header>
-				<section class="modal-card-body">
-					<p v-if="metrics">CPU {{ metrics.cpuPercent }}% · RAM {{ metrics.ramPercent }}% of {{ size(metrics.ramTotal) }}</p>
-					<p v-else>Metrics unavailable</p>
-					<p v-if="inventory.containers" class="mt-2">{{ inventory.containers.length }} running app containers</p>
-				</section>
-				<footer class="modal-card-foot"><b-button @click="systemOpen = false">Close</b-button></footer>
-			</div>
-		</b-modal>
-
-		<b-modal v-model="storageOpen" has-modal-card aria-role="dialog" aria-modal aria-label="Drive capacities">
-			<div class="modal-card">
-				<header class="modal-card-head"><h2 class="modal-card-title">Drive capacities</h2></header>
-				<section class="modal-card-body">
-					<p v-if="!drives.length">No drive readings available.</p>
-					<dl v-for="drive in drives" :key="drive.name" class="mb-4">
-						<dt class="has-text-weight-semibold">{{ drive.name }}</dt>
-						<dd v-if="drive.total">{{ size(drive.used) }} used · {{ size(drive.available) }} available · {{ size(drive.total) }} total</dd>
-						<dd v-else>Capacity unavailable</dd>
-					</dl>
-				</section>
-				<footer class="modal-card-foot"><b-button @click="storageOpen = false">Close</b-button></footer>
-			</div>
-		</b-modal>
-
-		<b-modal v-model="settingsOpen" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Dashboard settings">
-			<form v-if="settings" class="modal-card" @submit.prevent="saveSettings">
-				<header class="modal-card-head"><h2 class="modal-card-title">Dashboard settings</h2></header>
-				<section class="modal-card-body">
-					<b-field label="Wallpaper" label-for="wallpaper">
-						<div class="select"><select id="wallpaper" v-model="settings.wallpaper">
-							<option value="wallpaper01">Wallpaper 1</option>
-							<option value="wallpaper02">Wallpaper 2</option>
-						</select></div>
-					</b-field>
-					<div class="settings-options mt-4">
-						<b-checkbox v-for="(name, key) in widgetNames" :key="key" v-model="settings.widgets" :native-value="key">{{ name }}</b-checkbox>
-					</div>
-					<p v-if="error" class="has-text-danger mt-3" role="alert">{{ error }}</p>
-				</section>
-				<footer class="modal-card-foot modal-actions">
-					<div class="right-actions">
-						<b-button :disabled="saving" @click="settingsOpen = false">Cancel</b-button>
-						<b-button native-type="submit" type="is-primary" :loading="saving">Save</b-button>
-					</div>
-				</footer>
-			</form>
 		</b-modal>
 	</div>
 </template>
@@ -174,32 +98,14 @@ const networkHistory = ref([])
 const metricsUnavailable = ref(false)
 const error = ref('')
 const saving = ref(false)
-const showWidgets = ref(false)
 const cardOpen = ref(false)
-const settingsOpen = ref(false)
-const systemOpen = ref(false)
-const storageOpen = ref(false)
 const editingCard = ref(null)
-const settings = ref(null)
-const inventory = ref({ containers: null, drives: null })
-const inventoryLoaded = ref(false)
-const inventoryUnavailable = computed(() => inventoryLoaded.value && inventory.value.containers === null)
-const webIndex = computed(() => editingCard.value?.kind === 'web'
-	? state.value.links.findIndex(link => link.id === editingCard.value.id)
-	: -1)
+const hostDrives = ref([])
+const webIndex = computed(() => state.value?.links.findIndex(link => link.id === editingCard.value?.id) ?? -1)
 const drives = computed(() => {
-	const host = inventory.value.drives || []
-	if (!metrics.value) return host
+	if (!metrics.value) return hostDrives.value
 	const { diskTotal: total, diskUsed: used, diskAvailable: available } = metrics.value
-	return [...host, { name: 'Docker data', total, used, available }]
-})
-const cards = computed(() => {
-	if (!state.value) return []
-	const custom = new Map(state.value.containers.map(card => [card.id, card]))
-	const running = (inventory.value.containers || []).map(({ name, ports }) => ({
-		id: name, name, url: '', icon: '', ...custom.get(name), kind: 'container', ports,
-	}))
-	return [...running, ...state.value.links.map(card => ({ ...card, kind: 'web' }))]
+	return [...hostDrives.value, { name: 'Docker data', total, used, available }]
 })
 const wallpaper = computed(() => state.value?.wallpaper || 'wallpaper01')
 let timer
@@ -240,6 +146,16 @@ function size(bytes) {
 	return `${(bytes / 1024 ** unit).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${units[unit]}`
 }
 
+const wholeNumber = new Intl.NumberFormat()
+
+function driveUsage(drive) {
+	return Math.max(0, Math.min(100, 100 * drive.used / drive.total))
+}
+
+function driveSize(bytes) {
+	return `${wholeNumber.format(Math.round(bytes / 1_000_000_000))} GB`
+}
+
 async function save(patch) {
 	if (saving.value) return false
 	saving.value = true
@@ -262,35 +178,28 @@ async function save(patch) {
 	}
 }
 
-async function refreshInventory() {
+async function refreshDrives() {
 	try {
 		const response = await fetch('/api/inventory', { signal: AbortSignal.timeout(4500) })
 		if (!response.ok) throw new Error()
-		inventory.value = await response.json()
+		const { drives } = await response.json()
+		hostDrives.value = drives
 	} catch {
-		inventory.value = { containers: null, drives: null }
-	} finally {
-		inventoryLoaded.value = true
+		hostDrives.value = []
 	}
 }
 
-function openSystem() {
-	systemOpen.value = true
-}
-
-function openCard(kind, card) {
+function openCard(card) {
 	error.value = ''
-	editingCard.value = card ? { ...card } : { id: nanoid(), name: '', url: '', icon: '', kind }
+	editingCard.value = card ? { ...card } : { id: nanoid(), name: '', url: '', icon: '' }
 	cardOpen.value = true
 }
 
 async function saveCard(card) {
-	const key = editingCard.value.kind === 'container' ? 'containers' : 'links'
-	const collection = [...state.value[key]]
-	const existing = collection.findIndex(item => item.id === card.id)
-	if (existing >= 0) collection[existing] = card
-	else collection.push(card)
-	if (await save({ [key]: collection })) cardOpen.value = false
+	const links = [...state.value.links]
+	if (webIndex.value >= 0) links[webIndex.value] = card
+	else links.push(card)
+	if (await save({ links })) cardOpen.value = false
 }
 
 async function deleteCard() {
@@ -312,28 +221,13 @@ function fallbackIcon(event) {
 	if (event.target.getAttribute('src') !== defaultIcon) event.target.src = defaultIcon
 }
 
-function openSettings() {
-	error.value = ''
-	settings.value = {
-		widgets: [...state.value.widgets],
-		wallpaper: state.value.wallpaper,
-	}
-	settingsOpen.value = true
-}
-
-async function saveSettings() {
-	const { wallpaper, widgets } = settings.value
-	const orderedWidgets = Object.keys(widgetNames).filter(widget => widgets.includes(widget))
-	if (await save({ wallpaper, widgets: orderedWidgets })) settingsOpen.value = false
-}
-
 onMounted(() => {
 	load()
 	refreshMetrics()
-	refreshInventory()
+	refreshDrives()
 	timer = setInterval(() => {
 		refreshMetrics()
-		refreshInventory()
+		refreshDrives()
 	}, 5000)
 })
 onUnmounted(() => clearInterval(timer))
@@ -342,7 +236,7 @@ onUnmounted(() => clearInterval(timer))
 <style lang="scss">
 .dashboard {
 	min-height: 100vh;
-	padding-bottom: 2rem;
+	padding-block: 2rem;
 	background: #000;
 
 	.wallpaper {
@@ -353,49 +247,16 @@ onUnmounted(() => clearInterval(timer))
 		pointer-events: none;
 	}
 
-	.dashboard-bar {
-		position: sticky;
-		z-index: 20;
-		top: 0;
-		min-height: 42px;
-		display: flex;
-		align-items: center;
-		padding-inline: 1.25rem;
-		background: #343436;
-		color: white;
-	}
-
-	.bar-actions, .section-heading, .widget-heading {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.bar-actions { gap: 0.45rem; }
-
 	.dashboard-layout {
 		position: relative;
 		display: grid;
 		grid-template-columns: minmax(222px, 1fr) minmax(0, 3.1fr);
 		width: min(calc(100% - 3rem), 1344px);
-		margin: 2rem auto 0;
+		margin-inline: auto;
 		gap: 1rem;
 	}
 
-	.section-heading {
-		min-height: 2rem;
-		margin: 0 0 1rem;
-		padding-inline: 0.5rem;
-		color: white;
-
-		h2 {
-			font-size: 1.25rem;
-			font-weight: 400;
-			color: inherit;
-		}
-	}
-
-	.toolbar-button, .plain-button {
+	.plain-button {
 		display: grid;
 		place-items: center;
 		width: 2.25rem;
@@ -412,18 +273,53 @@ onUnmounted(() => clearInterval(timer))
 	}
 
 	.blur-background { inset: 0; pointer-events: none; }
-	.empty-card {
+	.add-card {
 		border: 0;
 		background: transparent;
 		font: inherit;
 		cursor: pointer;
 	}
+	.storage-widget > .blur-background {
+		background-color: rgb(0 63 94 / 50%);
+		border-color: rgb(191 236 255 / 12%);
+	}
+
 	.drive { margin-top: 0.75rem; }
 	.drive + .drive { margin-top: 1rem; }
-	.drive-details { display: flex; gap: 0.65rem; align-items: center; font-size: 0.82rem; }
+	.drive-details {
+		display: flex;
+		gap: 0.8rem;
+		align-items: center;
+		color: #d8eaf4;
+		font-size: 0.875rem;
+		line-height: 1.45;
+	}
 	.drive-name { color: #f4fbff; font-weight: 600; }
 	.drive-details img { flex: 0 0 58px; }
-	.inventory-status { color: white; margin: 0 0 0.75rem 0.5rem; }
+	.drive-usage {
+		display: inline-block;
+		margin: 0.15rem 0 0.25rem;
+		padding: 0 0.35rem;
+		border: 1px solid currentColor;
+		border-radius: 0.3rem;
+		color: #6ce4ad;
+		font-size: 0.75rem;
+	}
+	.drive-progress {
+		display: block;
+		appearance: none;
+		width: 75%;
+		height: 0.7rem;
+		margin-top: 0.65rem;
+		overflow: hidden;
+		border: 0;
+		border-radius: 999px;
+		background: rgb(190 222 239 / 30%);
+
+		&::-webkit-progress-bar { background: transparent; }
+		&::-webkit-progress-value { background: #2478ef; border-radius: inherit; }
+		&::-moz-progress-bar { background: #2478ef; border-radius: inherit; }
+	}
 
 	.app-grid {
 		display: grid;
@@ -462,10 +358,14 @@ onUnmounted(() => clearInterval(timer))
 	.tile-icon {
 		display: grid;
 		place-items: center;
-		background: #2a75cc;
+		background: #10969b;
 		box-shadow: 0 1px 3px #0005;
 	}
-	.tile-icon.web-icon { background: #10969b; }
+	.add-symbol {
+		font-size: clamp(2.75rem, 5vw, 3.75rem);
+		font-weight: 300;
+		line-height: 1;
+	}
 
 	.card-action {
 		position: absolute;
@@ -478,7 +378,6 @@ onUnmounted(() => clearInterval(timer))
 	}
 	.app-card:hover .card-action, .app-card:focus-within .card-action { opacity: 1; }
 
-	.mobile-widgets { display: none; }
 	.network-rates { gap: 0.75rem; }
 	.network-chart {
 		display: block;
@@ -493,7 +392,6 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .modal-card { max-width: min(640px, calc(100vw - 2rem)); }
-.modal-card .settings-options { display: grid; gap: 0.65rem; }
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .right-actions { margin-left: auto; display: flex; gap: 0.5rem; }
 
@@ -504,10 +402,9 @@ onUnmounted(() => clearInterval(timer))
 	.dashboard .app-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
-	.dashboard .dashboard-layout { display: block; width: calc(100% - 2rem); margin-top: 1.25rem; }
-	.dashboard .widget-column { display: none; }
-	.dashboard .widget-column.widgets-open { display: block; }
-	.dashboard .mobile-widgets { display: grid; }
+	.dashboard { padding-top: 1.25rem; }
+	.dashboard .dashboard-layout { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2rem); }
+	.dashboard .main-column { grid-row: 1; }
 }
 @media (max-width: 360px) {
 	.dashboard .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
