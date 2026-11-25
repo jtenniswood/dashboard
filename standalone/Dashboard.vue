@@ -352,9 +352,13 @@ onUnmounted(() => clearInterval(timer))
 		.column { padding-bottom: 0.25rem; }
 	}
 
-	.storage-widget > .blur-background {
-		background-color: rgb(0 63 94 / 50%);
-		border-color: rgb(191 236 255 / 12%);
+	.storage-widget {
+		> .widget-content { padding-bottom: 1.5rem; }
+
+		> .blur-background {
+			background-color: rgb(0 63 94 / 50%);
+			border-color: rgb(191 236 255 / 12%);
+		}
 	}
 
 	.drive { margin-top: 0.75rem; }
