@@ -1,5 +1,5 @@
 <template>
-	<form class="modal-card" @submit.prevent="submit">
+	<form class="modal-card web-card-editor" @submit.prevent="submit">
 		<header class="modal-card-head"><h2 class="modal-card-title">{{ title }}</h2></header>
 		<section class="modal-card-body">
 			<b-field label="Name" label-for="card-name">
@@ -106,6 +106,8 @@ function remove() {
 </script>
 
 <style scoped>
+.web-card-editor { width: min(28rem, calc(100vw - 2rem)); }
+
 .icon-editor {
 	display: flex;
 	align-items: end;
@@ -113,5 +115,5 @@ function remove() {
 	flex-wrap: wrap;
 }
 .icon-editor img { object-fit: contain; border-radius: 0.5rem; }
-.icon-editor input { max-width: 100%; }
+.icon-editor > div, .icon-editor input { min-width: 0; max-width: 100%; }
 </style>

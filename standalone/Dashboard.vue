@@ -391,7 +391,6 @@ onUnmounted(() => clearInterval(timer))
 	.upload-line { stroke: #7ff2be; }
 }
 
-.modal-card { max-width: min(640px, calc(100vw - 2rem)); }
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .right-actions { margin-left: auto; display: flex; gap: 0.5rem; }
 
