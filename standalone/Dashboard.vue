@@ -308,8 +308,8 @@ onUnmounted(() => clearInterval(timer))
 	.drive-progress {
 		display: block;
 		appearance: none;
-		width: 75%;
-		height: 0.7rem;
+		width: 100%;
+		height: 0.4rem;
 		margin-top: 0.65rem;
 		overflow: hidden;
 		border: 0;
