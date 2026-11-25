@@ -355,7 +355,7 @@ onUnmounted(() => clearInterval(timer))
 	}
 
 	.drive { margin-top: 0.75rem; }
-	.drive + .drive { margin-top: 1rem; }
+	.drive + .drive { margin-top: 1.5rem; }
 	.drive-details {
 		display: flex;
 		gap: 0.8rem;
