@@ -58,14 +58,16 @@
 					<template #item="{ element: card }">
 						<article class="app-card common-card web-card" @contextmenu.prevent="openContextMenu($event, card)"
 							@keydown="openContextMenuFromKey($event, card)">
-							<div class="blur-background"></div>
-							<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
-								<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" draggable="false" @error="fallbackIcon">
-								<span v-else class="tile-icon" aria-hidden="true">
-									<b-icon icon="web" size="is-medium" />
-								</span>
-								<span class="one-line">{{ card.name }}</span>
-							</a>
+							<div class="web-card-surface">
+								<div class="blur-background"></div>
+								<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
+									<img v-if="card.icon" :src="card.icon" alt="" width="64" height="64" draggable="false" @error="fallbackIcon">
+									<span v-else class="tile-icon" aria-hidden="true">
+										<b-icon icon="web" size="is-medium" />
+									</span>
+									<span class="one-line">{{ card.name }}</span>
+								</a>
+							</div>
 							<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" :disabled="saving" @click="openCard(card)">
 								<b-icon icon="dots-horizontal" />
 							</button>
@@ -393,34 +395,6 @@ onUnmounted(() => clearInterval(timer))
 		gap: 1rem;
 	}
 
-	.app-link {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		border: 0;
-		background: transparent;
-		color: white;
-		font: inherit;
-		font-size: 0.875rem;
-		text-align: center;
-		cursor: pointer;
-
-		img, .tile-icon {
-			width: clamp(42px, 5vw, 64px);
-			height: clamp(42px, 5vw, 64px);
-			object-fit: contain;
-			border-radius: 0.75rem;
-		}
-		span { max-width: 100%; }
-		&:focus-visible { outline: 2px solid white; border-radius: inherit; }
-	}
-
 	.web-card { transition: box-shadow 0.3s; }
 	.can-reorder .web-card .app-link { cursor: grab; }
 
@@ -431,12 +405,6 @@ onUnmounted(() => clearInterval(timer))
 	}
 	.card-drop-position > * { visibility: hidden; }
 
-	.tile-icon {
-		display: grid;
-		place-items: center;
-		background: #10969b;
-		box-shadow: 0 1px 3px #0005;
-	}
 	.add-symbol {
 		font-size: clamp(2.75rem, 5vw, 3.75rem);
 		font-weight: 300;
@@ -467,42 +435,65 @@ onUnmounted(() => clearInterval(timer))
 	.upload-line { stroke: #7ff2be; }
 }
 
+.web-card-surface {
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+
+	> .blur-background { inset: 0; }
+}
+
+:is(.dashboard, .card-drag-preview) {
+	.app-link {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		border: 0;
+		background: transparent;
+		color: white;
+		font: inherit;
+		font-size: 0.875rem;
+		text-align: center;
+		cursor: pointer;
+
+		img, .tile-icon {
+			width: clamp(42px, 5vw, 64px);
+			height: clamp(42px, 5vw, 64px);
+			object-fit: contain;
+			border-radius: 0.75rem;
+		}
+		span { max-width: 100%; }
+		&:focus-visible { outline: 2px solid white; border-radius: inherit; }
+	}
+
+	.tile-icon {
+		display: grid;
+		place-items: center;
+		background: #10969b;
+		box-shadow: 0 1px 3px #0005;
+	}
+}
+
 .app-card.card-drag-preview {
 	opacity: 1 !important;
 	transition: none;
 
-	> .blur-background, > .card-action { display: none; }
+	> .card-action { display: none; }
 
-	.app-link {
-		position: absolute;
-		top: var(--grab-y, 50%);
-		left: var(--grab-x, 50%);
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		width: max-content;
-		max-width: 10rem;
-		height: 2.25rem;
-		padding-inline: 0.5rem;
-		transform: translate(-50%, calc(-100% - 0.65rem));
-		border: 1px solid #b9e9ff;
-		border-radius: 0.45rem;
-		background: #102e43;
-		box-shadow: 0 2px 8px #0006;
-		color: white;
-		font-size: 0.8125rem;
-	}
+	.web-card-surface {
+		transform: scale(0.82);
+		transform-origin: var(--grab-x, 50%) var(--grab-y, 50%);
+		background: #084c68;
+		box-shadow: 0 5px 18px #0007;
 
-	img, .tile-icon {
-		display: grid;
-		flex: 0 0 1.25rem;
-		place-items: center;
-		width: 1.25rem;
-		height: 1.25rem;
-		object-fit: contain;
+		> .blur-background { backdrop-filter: none; }
 	}
-	.tile-icon .mdi::before { font-size: 1.125rem; }
-	.one-line { min-width: 0; }
 }
 
 .modal-actions { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
