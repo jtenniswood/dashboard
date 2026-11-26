@@ -45,7 +45,8 @@ try {
 	const saved = JSON.parse(readFileSync(dataFile, 'utf8'))
 	const wasDefault = saved.widgets.join(',') === 'clock,system,storage,network'
 	const widgets = wasDefault ? defaults.widgets : saved.widgets.filter(widget => widgetNames.includes(widget))
-	const { revision, links, wallpaper } = saved
+	const { revision, links } = saved
+	const wallpaper = Object.hasOwn(wallpapers, saved.wallpaper) ? saved.wallpaper : defaults.wallpaper
 	dashboard = { revision, links, wallpaper, widgets }
 } catch (error) {
 	if (error.code !== 'ENOENT') throw error

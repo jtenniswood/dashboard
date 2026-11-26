@@ -50,7 +50,6 @@ The source snapshot comes from [ReCasaOS/CasaOS-UI at 6eb0735](https://github.co
 
 ### Wallpaper credits
 
-- **Grand Tetons** by [Jeremy Bishop](https://unsplash.com/photos/landscape-photography-of-mountains-covered-by-snow-xsxc8yTZk0U).
 - **Dolomites at night** by [Marek Piwnicki](https://unsplash.com/photos/snowy-mountains-under-a-starry-night-sky-SumjjLhysZM).
 - **Moena under stars** by [Benjamin Voros](https://unsplash.com/photos/snow-mountain-under-stars-phIFdC6lA4E).
 
