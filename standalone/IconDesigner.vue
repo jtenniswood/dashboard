@@ -4,9 +4,13 @@
 			<div class="icon-sample" :style="{ background: gradient }" aria-label="Icon preview">
 				<span v-if="ready" class="symbol" aria-hidden="true">{{ glyph(selectedCodepoint) }}</span>
 			</div>
-			<label class="colour-label" for="icon-colour">Background colour
-				<input id="icon-colour" v-model="colour" type="color">
-			</label>
+			<div class="colour-field" role="group" aria-labelledby="icon-colour-label">
+				<span id="icon-colour-label" class="colour-label">Background colour</span>
+				<div class="colour-grid">
+					<button v-for="[name, value] in colours" :key="value" type="button" :aria-label="name" :title="name"
+						:aria-pressed="colour === value" :style="{ backgroundColor: value }" @click="colour = value"></button>
+				</div>
+			</div>
 		</div>
 		<b-field label="Material Symbols" label-for="icon-search">
 			<input id="icon-search" v-model="search" class="input" type="search" placeholder="Search icons" autocomplete="off">
@@ -38,8 +42,16 @@ const emit = defineEmits(['apply', 'cancel'])
 const featured = ['language', 'sync', 'home', 'folder', 'dns', 'storage', 'dashboard', 'movie', 'photo_camera', 'calendar_month',
 	'checklist', 'monitoring', 'cloud', 'newspaper', 'music_note', 'terminal', 'hub', 'code', 'settings', 'public', 'vpn_key']
 
+const palette = [
+	['Red', '#c63d43'], ['Orange', '#b85829'], ['Amber', '#966714'], ['Olive', '#677838'], ['Green', '#34804e'], ['Emerald', '#228267'],
+	['Teal', '#07878e'], ['Blue', '#2878c9'], ['Indigo', '#5058b8'], ['Violet', '#7c4caa'], ['Rose', '#b74a7c'], ['Charcoal', '#43515e'],
+]
+const savedColour = props.initial?.colour?.toLowerCase()
+const colours = savedColour && !palette.some(([, value]) => value === savedColour)
+	? [...palette, ['Saved colour', savedColour]]
+	: palette
 const symbol = ref(props.initial?.symbol || featured[0])
-const colour = ref(props.initial?.colour || '#2878c9')
+const colour = ref(savedColour || '#2878c9')
 const selectedCodepoint = ref('')
 const icons = ref([])
 const search = ref('')
@@ -145,20 +157,25 @@ function apply() {
 	box-shadow: 0 2px 5px #152b4140;
 }
 
-.colour-label {
+.colour-field { flex: 1; min-width: 0; }
+.colour-label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+
+.colour-grid {
 	display: grid;
-	gap: 0.25rem;
-	font-weight: 600;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 0.35rem;
+	max-width: 13rem;
 }
 
-.colour-label input {
-	width: 3rem;
-	height: 1.75rem;
-	padding: 0.15rem;
-	border: 1px solid #c4ced6;
+.colour-grid button {
+	aspect-ratio: 1;
+	border: 1px solid #0002;
 	border-radius: 0.35rem;
 	cursor: pointer;
 }
+
+.colour-grid button[aria-pressed="true"] { box-shadow: 0 0 0 1px white, 0 0 0 3px #183343; }
+.colour-grid button:focus-visible { outline: 2px solid #2478ef; outline-offset: 2px; }
 
 .symbol {
 	font: 500 25px/1 "Dashboard Material Symbols";
