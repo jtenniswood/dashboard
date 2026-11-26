@@ -14,12 +14,11 @@
 		<p v-if="error" class="has-text-danger" role="alert">{{ error }}</p>
 		<p v-else-if="!ready" role="status">Loading icons…</p>
 		<p v-else-if="!matches.length" role="status">No matching icons.</p>
-		<div v-else class="symbol-grid" aria-label="Matching icons">
-			<button v-for="[name, codepoint] in matches.slice(0, limit)" :key="name" type="button"
+		<div v-else ref="grid" class="symbol-grid" aria-label="Matching icons">
+			<button v-for="[name, codepoint] in matches" :key="name" v-memo="[name === symbol]" type="button"
 				:aria-label="label(name)" :title="label(name)" :aria-pressed="name === symbol" @click="select(name, codepoint)">
 				<span class="symbol" aria-hidden="true">{{ glyph(codepoint) }}</span>
 			</button>
-			<b-button v-if="matches.length > limit" class="more-symbols" size="is-small" @click="limit += pageSize">Show more</b-button>
 		</div>
 	</section>
 	<footer class="modal-card-foot modal-actions">
@@ -36,7 +35,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 const props = defineProps({ initial: { type: Object, default: null } })
 const emit = defineEmits(['apply', 'cancel'])
 
-const pageSize = 42
 const featured = ['language', 'sync', 'home', 'folder', 'dns', 'storage', 'dashboard', 'movie', 'photo_camera', 'calendar_month',
 	'checklist', 'monitoring', 'cloud', 'newspaper', 'music_note', 'terminal', 'hub', 'code', 'settings', 'public', 'vpn_key']
 
@@ -45,7 +43,7 @@ const colour = ref(props.initial?.colour || '#2878c9')
 const selectedCodepoint = ref('')
 const icons = ref([])
 const search = ref('')
-const limit = ref(pageSize)
+const grid = ref(null)
 const ready = ref(false)
 const error = ref('')
 const gradientStops = computed(() => {
@@ -61,7 +59,9 @@ const matches = computed(() => {
 	return icons.value.filter(([name]) => terms.every(term => name.includes(term)))
 })
 
-watch(search, () => { limit.value = pageSize })
+watch(search, () => {
+	if (grid.value) grid.value.scrollTop = 0
+}, { flush: 'post' })
 
 function label(name) {
 	return name.replaceAll('_', ' ')
@@ -175,7 +175,7 @@ function apply() {
 	padding: 0.15rem;
 }
 
-.symbol-grid > button:not(.more-symbols) {
+.symbol-grid > button {
 	display: grid;
 	aspect-ratio: 1;
 	place-items: center;
@@ -196,8 +196,4 @@ function apply() {
 	outline-offset: -2px;
 }
 
-.more-symbols {
-	grid-column: 1 / -1;
-	justify-self: start;
-}
 </style>
