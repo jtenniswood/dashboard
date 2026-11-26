@@ -169,4 +169,23 @@ function remove() {
 }
 .icon-editor img { object-fit: contain; border-radius: 0.5rem; }
 .icon-editor > div, .icon-editor input { min-width: 0; max-width: 100%; }
+
+.icon-editor input[type="file"] {
+	font: inherit;
+	font-size: 1rem;
+}
+
+.icon-editor input[type="file"]::file-selector-button {
+	min-height: 2.75rem;
+	margin-inline-end: 0.5rem;
+	padding-inline: 0.75rem;
+	border: 1px solid #c4ced6;
+	border-radius: 0.4rem;
+	background: #f1f5f9;
+	color: #183343;
+	font: inherit;
+	cursor: pointer;
+}
+
+.icon-editor input[type="file"]:hover::file-selector-button { background: #e5edf5; }
 </style>
