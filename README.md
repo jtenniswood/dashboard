@@ -10,7 +10,7 @@ cd dashboard
 docker compose up -d --build --wait
 ```
 
-Open [http://localhost:8180](http://localhost:8180). Use the **+** card at the end of the app grid to add a web link. Drag cards to reorder them. On touch screens, press and hold a card briefly before dragging. The dashed outline shows where it will land. Right-click a card to open, edit, or move it. To remove a card, open its editor. On touch screens the menu is always visible. Cards try the linked site’s icon automatically. To override it, enter an icon URL or upload a PNG, JPEG, WebP, or GIF up to 4 MB. Uploads are resized to 128 pixels and stored with the card.
+Open [http://localhost:8180](http://localhost:8180). Use the **+** card at the end of the app grid to add a web link. Drag cards to reorder them. On touch screens, press and hold a card briefly before dragging. The dashed outline shows where it will land. Right-click a card to open, edit, or move it. Cards with a created icon also have a **Change colour** action. To remove a card, open its editor. On touch screens the menu is always visible. Cards try the linked site’s icon automatically. To override it, enter an icon URL, upload a PNG, JPEG, WebP, GIF or SVG up to 4 MB, or choose **Create icon** to pick a Material Symbol and background colour. Created and uploaded icons are rendered as PNGs up to 128 pixels. The rendered icons and original SVG uploads are stored in `/data/icons` on the mounted `dashboard-data` volume.
 
 Right-click the wallpaper and choose **Change wallpaper** to pick from the background images. The Docker volume keeps your web cards and wallpaper through container restarts and image rebuilds. To use a different local port, set `DASHBOARD_PORT` when running Docker Compose.
 
@@ -50,7 +50,6 @@ The source snapshot comes from [ReCasaOS/CasaOS-UI at 6eb0735](https://github.co
 
 ### Wallpaper credits
 
-- **Grand Tetons** by [Jeremy Bishop](https://unsplash.com/photos/landscape-photography-of-mountains-covered-by-snow-xsxc8yTZk0U).
 - **Dolomites at night** by [Marek Piwnicki](https://unsplash.com/photos/snowy-mountains-under-a-starry-night-sky-SumjjLhysZM).
 - **Moena under stars** by [Benjamin Voros](https://unsplash.com/photos/snow-mountain-under-stars-phIFdC6lA4E).
 
