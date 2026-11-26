@@ -1,5 +1,5 @@
 <template>
-	<img v-if="source" :key="source" :src="source" alt="" width="64" height="64" draggable="false"
+	<img v-if="source" :key="source" :src="source" :class="{ 'created-icon': created }" alt="" width="64" height="64" draggable="false"
 		referrerpolicy="no-referrer" @error="nextIcon">
 	<span v-else class="tile-icon" aria-hidden="true">
 		<b-icon icon="web" size="is-medium" />
@@ -13,6 +13,7 @@ import { siteIcons } from './site-icons.js'
 const props = defineProps({
 	address: { type: String, required: true },
 	icon: { type: String, default: '' },
+	created: Boolean,
 })
 
 const candidates = ref([])

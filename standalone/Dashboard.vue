@@ -64,7 +64,7 @@
 							<div class="web-card-surface">
 								<div class="blur-background"></div>
 								<a class="app-link" :href="card.url" target="_blank" rel="noopener noreferrer" draggable="false">
-									<CardIcon :address="card.url" :icon="card.icon" />
+									<CardIcon :address="card.url" :icon="card.icon" :created="!!card.iconDesign" />
 									<span class="one-line">{{ card.name }}</span>
 								</a>
 							</div>
@@ -518,6 +518,12 @@ onUnmounted(() => clearInterval(timer))
 			height: clamp(42px, 5vw, 64px);
 			object-fit: contain;
 			border-radius: 0.75rem;
+		}
+		img.created-icon {
+			width: clamp(42px, 5vw, 60px);
+			height: clamp(42px, 5vw, 60px);
+			border-radius: 0;
+			filter: drop-shadow(0 2px 3px #071f3870);
 		}
 		span { max-width: 100%; }
 		&:focus-visible { outline: 2px solid white; border-radius: inherit; }
