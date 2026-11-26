@@ -1,15 +1,12 @@
 <template>
 	<section class="modal-card-body designer">
 		<div class="designer-preview">
-			<div class="icon-sample" :style="{ background: gradient }" aria-label="Icon preview">
+			<div class="icon-sample" :style="{ background: iconGradient(colour), color: iconForeground(colour) }" aria-label="Icon preview">
 				<span v-if="ready" class="symbol" aria-hidden="true">{{ glyph(selectedCodepoint) }}</span>
 			</div>
-			<div class="colour-field" role="group" aria-labelledby="icon-colour-label">
-				<span id="icon-colour-label" class="colour-label">Background colour</span>
-				<div class="colour-grid">
-					<button v-for="[name, value] in colours" :key="value" type="button" :aria-label="name" :title="name"
-						:aria-pressed="colour === value" :style="{ backgroundColor: value }" @click="colour = value"></button>
-				</div>
+			<div class="colour-field">
+				<span class="colour-label">Background colour</span>
+				<ColourPalette :colour="colour" @select="colour = $event" />
 			</div>
 		</div>
 		<b-field label="Material Symbols" label-for="icon-search">
@@ -35,6 +32,8 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import ColourPalette from './ColourPalette.vue'
+import { defaultIconColour, drawMaterialIcon, glyph, iconForeground, iconGradient, loadMaterialSymbols } from './material-icon.js'
 
 const props = defineProps({ initial: { type: Object, default: null } })
 const emit = defineEmits(['apply', 'cancel'])
@@ -42,29 +41,14 @@ const emit = defineEmits(['apply', 'cancel'])
 const featured = ['language', 'sync', 'home', 'folder', 'dns', 'storage', 'dashboard', 'movie', 'photo_camera', 'calendar_month',
 	'checklist', 'monitoring', 'cloud', 'newspaper', 'music_note', 'terminal', 'hub', 'code', 'settings', 'public', 'vpn_key']
 
-const palette = [
-	['Red', '#c63d43'], ['Orange', '#b85829'], ['Amber', '#966714'], ['Olive', '#677838'], ['Green', '#34804e'], ['Emerald', '#228267'],
-	['Teal', '#07878e'], ['Blue', '#2878c9'], ['Indigo', '#5058b8'], ['Violet', '#7c4caa'], ['Rose', '#b74a7c'], ['Charcoal', '#43515e'],
-]
-const savedColour = props.initial?.colour?.toLowerCase()
-const colours = savedColour && !palette.some(([, value]) => value === savedColour)
-	? [...palette, ['Saved colour', savedColour]]
-	: palette
 const symbol = ref(props.initial?.symbol || featured[0])
-const colour = ref(savedColour || '#2878c9')
+const colour = ref(props.initial?.colour || defaultIconColour)
 const selectedCodepoint = ref('')
 const icons = ref([])
 const search = ref('')
 const grid = ref(null)
 const ready = ref(false)
 const error = ref('')
-const gradientStops = computed(() => {
-	const channels = colour.value.slice(1).match(/../g).map(channel => parseInt(channel, 16))
-	const light = channels.map(channel => Math.round(channel + (255 - channel) * 0.10))
-	const dark = channels.map(channel => Math.round(channel * 0.82))
-	return [light, dark].map(rgb => `rgb(${rgb.join(', ')})`)
-})
-const gradient = computed(() => `linear-gradient(160deg, ${gradientStops.value.join(', ')})`)
 const matches = computed(() => {
 	const terms = search.value.trim().toLowerCase().split(/[\s_-]+/).filter(Boolean)
 	if (!terms.length) return icons.value
@@ -79,10 +63,6 @@ function label(name) {
 	return name.replaceAll('_', ' ')
 }
 
-function glyph(codepoint) {
-	return String.fromCodePoint(parseInt(codepoint, 16))
-}
-
 function select(name, codepoint) {
 	symbol.value = name
 	selectedCodepoint.value = codepoint
@@ -90,15 +70,9 @@ function select(name, codepoint) {
 
 onMounted(async () => {
 	try {
-		const [response, faces] = await Promise.all([
-			fetch('/material-symbols/rounded-codepoints.txt'),
-			document.fonts.load('500 88px "Dashboard Material Symbols"', '\ue894'),
-		])
-		if (!response.ok || !faces.length) throw new Error()
-		const entries = (await response.text()).trim().split('\n').map(row => row.trim().split(/\s+/))
-		const byName = new Map(entries)
+		const byName = await loadMaterialSymbols()
 		const picked = featured.filter(name => byName.has(name)).map(name => [name, byName.get(name)])
-		icons.value = [...picked, ...entries.filter(([name]) => !featured.includes(name))]
+		icons.value = [...picked, ...[...byName].filter(([name]) => !featured.includes(name))]
 		const initial = byName.has(symbol.value) ? symbol.value : featured[0]
 		select(initial, byName.get(initial))
 		ready.value = true
@@ -109,23 +83,10 @@ onMounted(async () => {
 
 function apply() {
 	if (!ready.value) return
-	const canvas = document.createElement('canvas')
-	canvas.width = 128
-	canvas.height = 128
-	const context = canvas.getContext('2d')
-	const fill = context.createLinearGradient(40, 0, 86, 128)
-	fill.addColorStop(0, gradientStops.value[0])
-	fill.addColorStop(1, gradientStops.value[1])
-	context.fillStyle = fill
-	context.beginPath()
-	context.roundRect(0, 0, 128, 128, 25)
-	context.fill()
-	context.fillStyle = 'white'
-	context.font = '500 88px "Dashboard Material Symbols"'
-	context.textAlign = 'center'
-	context.textBaseline = 'middle'
-	context.fillText(glyph(selectedCodepoint.value), 64, 64)
-	emit('apply', { icon: canvas.toDataURL('image/png'), design: { symbol: symbol.value, colour: colour.value } })
+	emit('apply', {
+		icon: drawMaterialIcon(selectedCodepoint.value, colour.value),
+		design: { symbol: symbol.value, colour: colour.value },
+	})
 }
 </script>
 
@@ -159,23 +120,6 @@ function apply() {
 
 .colour-field { flex: 1; min-width: 0; }
 .colour-label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
-
-.colour-grid {
-	display: grid;
-	grid-template-columns: repeat(6, minmax(0, 1fr));
-	gap: 0.35rem;
-	max-width: 13rem;
-}
-
-.colour-grid button {
-	aspect-ratio: 1;
-	border: 1px solid #0002;
-	border-radius: 0.35rem;
-	cursor: pointer;
-}
-
-.colour-grid button[aria-pressed="true"] { box-shadow: 0 0 0 1px white, 0 0 0 3px #183343; }
-.colour-grid button:focus-visible { outline: 2px solid #2478ef; outline-offset: 2px; }
 
 .symbol {
 	font: 500 25px/1 "Dashboard Material Symbols";

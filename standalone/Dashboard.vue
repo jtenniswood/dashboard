@@ -52,7 +52,7 @@
 				<h2 id="app-heading" class="app-heading">App</h2>
 				<Draggable class="app-grid" :class="{ 'can-reorder': state.links.length > 1 }"
 					:model-value="pendingOrder ?? state.links" item-key="id" draggable=".web-card"
-					:disabled="saving || cardOpen || wallpaperOpen || state.links.length < 2"
+					:disabled="busy || cardOpen || wallpaperOpen || state.links.length < 2"
 					:invert-swap="true" :inverted-swap-threshold="1"
 					:force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5" :delay-on-touch-only="true" :delay="180"
 					:touch-start-threshold="5" filter=".card-action, .add-card" :prevent-on-filter="false"
@@ -68,13 +68,13 @@
 									<span class="one-line">{{ card.name }}</span>
 								</a>
 							</div>
-							<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" :disabled="saving" @click="openCard(card)">
+							<button type="button" class="plain-button card-action" :aria-label="'Edit ' + card.name" :disabled="busy" @click="openCard(card)">
 								<b-icon icon="dots-horizontal" />
 							</button>
 						</article>
 					</template>
 					<template #footer>
-						<button type="button" class="app-card common-card add-card" :disabled="saving" @click="openCard()"
+						<button type="button" class="app-card common-card add-card" :disabled="busy" @click="openCard()"
 							@contextmenu.prevent="openContextMenu($event)" @keydown="openContextMenuFromKey($event)">
 							<div class="blur-background"></div>
 							<span class="app-link"><span class="add-symbol" aria-hidden="true">+</span><span>Add card</span></span>
@@ -89,7 +89,7 @@
 			<button v-if="error" type="button" class="button is-small ml-2" @click="load">Retry</button>
 		</p>
 
-		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" @wallpaper="showWallpaperPicker" />
+		<CardContextMenu ref="contextMenu" @edit="openCard" @move="moveCard" @wallpaper="showWallpaperPicker" @recolour="recolourCard" />
 
 		<b-modal v-model="cardOpen" :destroy-on-hide="false" has-modal-card :can-cancel="!saving" aria-role="dialog" aria-modal aria-label="Edit dashboard card">
 			<CardEditor v-if="editingCard" :key="editingCard.id" :card="editingCard"
@@ -128,6 +128,7 @@ import CardContextMenu from './CardContextMenu.vue'
 import CardEditor from './CardEditor.vue'
 import CardIcon from './CardIcon.vue'
 import { wallpapers } from './wallpapers.mjs'
+import { drawMaterialIcon, loadMaterialSymbols } from './material-icon.js'
 import RadialBar from '@/components/widgets/RadialBar.vue'
 import storageIcon from '@/assets/img/storage/storage.svg'
 
@@ -139,6 +140,8 @@ const networkHistory = ref([])
 const metricsUnavailable = ref(false)
 const error = ref('')
 const saving = ref(false)
+const recolouring = ref(false)
+const busy = computed(() => saving.value || recolouring.value)
 const cardOpen = ref(false)
 const wallpaperOpen = ref(false)
 const wallpaperSurface = ref(null)
@@ -281,8 +284,27 @@ async function reorderCards(links) {
 	}
 }
 
+async function recolourCard(id, colour) {
+	const card = state.value.links.find(link => link.id === id)
+	if (!card?.iconDesign || card.iconDesign.colour === colour || busy.value) return
+	error.value = ''
+	recolouring.value = true
+	try {
+		const library = await loadMaterialSymbols()
+		const codepoint = library.get(card.iconDesign.symbol)
+		if (!codepoint) throw new Error()
+		const icon = drawMaterialIcon(codepoint, colour)
+		const iconDesign = { ...card.iconDesign, colour }
+		await save({ links: state.value.links.map(link => link.id === id ? { ...link, icon, iconDesign } : link) })
+	} catch {
+		error.value = 'Could not change the icon colour.'
+	} finally {
+		recolouring.value = false
+	}
+}
+
 function openContextMenu(event, card) {
-	if (dragging || saving.value || cardOpen.value || wallpaperOpen.value || event.pointerType === 'touch') return
+	if (dragging || busy.value || cardOpen.value || wallpaperOpen.value || event.pointerType === 'touch') return
 	const links = state.value.links
 	const index = links.findIndex(link => link.id === card?.id)
 	contextMenu.value.open(event, {
@@ -304,7 +326,7 @@ function wallpaperImage(id) {
 }
 
 function openWallpaperMenu(event) {
-	if (!state.value || dragging || saving.value || cardOpen.value || wallpaperOpen.value) return
+	if (!state.value || dragging || busy.value || cardOpen.value || wallpaperOpen.value) return
 	if (event.type !== 'keydown' && (event.defaultPrevented || event.target.closest('.widget, a, button, .app-card'))) return
 	event.preventDefault()
 	contextMenu.value.open(event, { wallpaper: true, opener: wallpaperSurface.value, label: 'Background' })
