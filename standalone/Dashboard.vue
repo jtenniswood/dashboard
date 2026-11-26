@@ -556,7 +556,7 @@ onUnmounted(() => clearInterval(timer))
 .wallpaper-picker { width: min(42rem, calc(100vw - 2rem)); }
 .wallpaper-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 0.75rem;
 }
 .wallpaper-choice {
@@ -590,6 +590,9 @@ onUnmounted(() => clearInterval(timer))
 	.dashboard { padding-top: 1.25rem; }
 	.dashboard .dashboard-layout { grid-template-columns: minmax(0, 1fr); width: calc(100% - 2rem); }
 	.dashboard .main-column { grid-row: 1; }
+}
+@media (max-width: 480px) {
+	.wallpaper-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 360px) {
 	.dashboard .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
