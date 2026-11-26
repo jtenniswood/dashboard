@@ -20,10 +20,10 @@
 				</div>
 				<b-button v-if="fileIcon" size="is-small" @click="clearFile">Clear icon</b-button>
 			</div>
-			<b-button class="mt-3" icon-left="palette-outline" size="is-small" outlined :disabled="saving || processing" @click="creating = true">{{ iconDesign ? 'Edit created icon' : 'Create icon' }}</b-button>
+			<b-button class="mt-3" icon-left="palette-outline" :disabled="saving || processing" @click="creating = true">{{ iconDesign ? 'Edit created icon' : 'Create icon' }}</b-button>
 			<div v-if="canRemove" class="buttons mt-4">
-				<b-button outlined size="is-small" :disabled="saving || !canMoveEarlier" @click="$emit('move', -1)">Move earlier</b-button>
-				<b-button outlined size="is-small" :disabled="saving || !canMoveLater" @click="$emit('move', 1)">Move later</b-button>
+				<b-button size="is-small" :disabled="saving || !canMoveEarlier" @click="$emit('move', -1)">Move earlier</b-button>
+				<b-button size="is-small" :disabled="saving || !canMoveLater" @click="$emit('move', 1)">Move later</b-button>
 			</div>
 			<p v-if="uploadError || error" class="has-text-danger mt-3" role="alert">{{ uploadError || error }}</p>
 		</section>
